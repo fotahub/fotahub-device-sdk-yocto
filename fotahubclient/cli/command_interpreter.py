@@ -47,7 +47,7 @@ class CommandInterpreter(object):
         reverter.revert_os_update()
 
     def finish_operating_system_change(self):
-        self.logger.debug('Finalizing OS update or rollback, if any such has happened')
+        self.logger.debug('Finalizing OS update or rollback in case any such has just happened')
 
         finalizer = OSUpdateFinalizer(self.config)
         finalizer.finalize_os_update()

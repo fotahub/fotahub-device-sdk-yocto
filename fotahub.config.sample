@@ -26,5 +26,8 @@ OSUpdateVerificationCommand = bash -c 'echo "The downloaded OS update revision $
 OSUpdateSelfTestCommand = bash -c 'echo "The freshly applied OS update runs very well!"'
 
 [App]
-# Home location of application OSTree repository
+# Location of application OSTree repository
 AppOSTreeRepoPath = /apps/ostree/repo
+
+# Root location for application installations
+AppInstallRoot = /apps

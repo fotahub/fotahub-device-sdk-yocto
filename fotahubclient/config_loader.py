@@ -49,6 +49,7 @@ class ConfigLoader(object):
             self.os_update_self_test_command = config.get('OS', 'OSUpdateSelfTestCommand', fallback=None)
 
             self.app_ostree_repo_path = config.get('App', 'AppOSTreeRepoPath')
+            self.app_install_root = config.get('App', 'AppInstallRoot')
         except configparser.NoSectionError as err:
             raise ValueError("No '{}' section in FotaHub configuration file {}".format(err.section, self.config_path))
         except configparser.NoOptionError as err:

@@ -1,10 +1,11 @@
+import os
 import logging
 import subprocess
 import shlex
 
 def run_hook_command(title, command, args=[]):
     if command is not None:
-        logging.getLogger().info('Running ' + title)
+        logging.getLogger().info("Running {}".format(title))
 
         command = shlex.split(command)
         args = [args] if not isinstance(args, list) else args
@@ -36,3 +37,13 @@ def reboot_system():
         subprocess.run("reboot", check=True)
     except subprocess.CalledProcessError as err:
         raise OSError("Failed to reboot system") from err
+
+def chown_tree(path, uid, gid):
+    logging.getLogger().debug("Changing user/group ownership of each file in {} to {}/{}".format(path, str(uid), str(gid)))
+
+    os.chown(path, uid, gid)
+    for dir_path, dir_names, file_names in os.walk(path):
+        for dir_name in dir_names:
+            os.lchown(os.path.join(dir_path, dir_name), uid, gid)
+        for file_name in file_names:
+            os.lchown(os.path.join(dir_path, file_name), uid, gid)
