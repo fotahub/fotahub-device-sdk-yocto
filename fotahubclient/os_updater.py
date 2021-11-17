@@ -12,7 +12,7 @@ from fotahubclient.system_helper import reboot_system
 
 OSTREE_SYSTEM_REPOSITORY_PATH = '/ostree/repo'
 
-UBOOT_FLAG_ACTIVATING_OS_UPDATE = 'activating_os_update'
+UBOOT_FLAG_APPLYING_OS_UPDATE = 'applying_os_update'
 UBOOT_FLAG_REVERTING_OS_UPDATE = 'reverting_os_update'
 UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT = 'os_update_reboot_failure_credit'
 
@@ -88,31 +88,31 @@ class OSUpdater(object):
         except GLib.Error as err:
             raise OSTreeError("Failed to stage OS update with revision '{}'".format(revision)) from err
 
-    def activate_os_update(self, revision, max_reboot_failures):
-        self.logger.info("Activating OS update")
-        if self.is_activating_os_update():
-            raise OSTreeError("Cannot activate any new OS update when the activation of some other OS update is still underway")
+    def apply_os_update(self, revision, max_reboot_failures):
+        self.logger.info("Applying OS update")
+        if self.is_applying_os_update():
+            raise OSTreeError("Cannot apply any new OS update when the some other OS update is still about to be applied")
         if self.is_reverting_os_update():
-            raise OSTreeError("Cannot activate any new OS update when the rollback of some other OS update is still underway")
+            raise OSTreeError("Cannot apply any new OS update when the some other OS update is still about to be reverted")
         if revision == self.get_installed_os_revision():
             raise OSTreeError("Cannot update OS towards the same revision that is already in use")
             
         self.__stage_os_update(revision)
 
-        self.uboot.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE, '1')
+        self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE, '1')
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT, str(max_reboot_failures))
 
         reboot_system()
 
-    def is_activating_os_update(self):
-        return self.uboot.isset_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
+    def is_applying_os_update(self):
+        return self.uboot.isset_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE)
 
     def confirm_os_update(self):
         self.logger.info("Confirming OS update")
-        if not self.is_activating_os_update():
-            raise OSTreeError("Cannot confirm OS update before any such has been activated")
+        if not self.is_applying_os_update():
+            raise OSTreeError("Cannot confirm OS update before any such has been applied")
 
-        self.uboot.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
+        self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE)
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
 
     def revert_os_update(self):
@@ -120,7 +120,7 @@ class OSUpdater(object):
         if not self.has_rollback_os_revision():
             raise OSTreeError("Cannot revert OS update before any such has been installed")
 
-        self.uboot.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
+        self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE)
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
         self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE, '1')
 

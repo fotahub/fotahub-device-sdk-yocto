@@ -9,20 +9,17 @@ class ArtifactKind(Enum):
     Application = 2
     Firmware = 3
 
-class UpdateStatus(Enum):
+class UpdateState(Enum):
     downloaded = 1
     verified = 2
-    activated = 3
+    applied = 3
     confirmed = 4 
     reverted = 5
-    failed = 6
 
     def is_final(self):
-        return self == UpdateStatus.confirmed or self == UpdateStatus.reverted or self == UpdateStatus.failed
+        return self == UpdateState.confirmed or self == UpdateState.reverted
 
-UPDATE_DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-
-class InstalledArtifactInfo(object):
+class InstalledArtifact(object):
     def __init__(self, name, kind, installed_revision, rollback_revision=None):
         self.name = name
         self.kind = kind
@@ -36,29 +33,34 @@ class InstalledArtifacts(object):
     def serialize(self):
         return json.dumps(self, indent=4, cls=PascalCaseJSONEncoder)
 
-UPDATE_STATUS_INFO_MESSAGE_DEFAULTS = {
-    UpdateStatus.reverted: 'Update reverted due to application-level or external request'
-}
-
-class UpdateStatusInfo(object):
-    def __init__(self, artifact_name, artifact_kind, revision, install_date, status, message=None):
+class UpdateStatus(object):
+    def __init__(self, artifact_name, artifact_kind, revision, install_timestamp, state, status=True, message=None):
         self.artifact_name = artifact_name
         self.artifact_kind = artifact_kind
         self.revision = revision
-        self.install_date = install_date
+        self.install_timestamp = install_timestamp
+        self.state = state
         self.status = status
-        self.message = self.__ensure_default_message(status, message)
+        self.message = message
 
-    def reinit(self, revision, install_date, status, message=None):
-        self.revision = revision
-        self.install_date = install_date
+    def update(self, revision, state, status=True, message=None):
+        if revision is not None:
+            self.revision = revision
+        if state is not None:
+            self.state = state
         self.status = status
-        self.message = self.__ensure_default_message(status, message)
-    
-    def __ensure_default_message(self, status, message):
-        if message is None and status in UPDATE_STATUS_INFO_MESSAGE_DEFAULTS.keys():
-            return UPDATE_STATUS_INFO_MESSAGE_DEFAULTS[status]
-        return message
+        if message is not None:
+            self.message = message
+
+    def reinit(self, revision, install_timestamp, state, status=True, message=None):
+        self.revision = revision
+        self.install_timestamp = install_timestamp
+        self.state = state
+        self.status = status
+        self.message = message
+
+    def is_final(self):
+        return self.state.is_final()
 
 class UpdateStatuses(object):
     def __init__(self, update_statuses=None):
@@ -95,4 +97,4 @@ class UpdateStatuses(object):
 
 class UpdateStatusesJSONDecoder(PascalCasedObjectArrayJSONDecoder):
     def __init__(self,):
-        super().__init__(UpdateStatuses, UpdateStatusInfo, [ArtifactKind, UpdateStatus])
+        super().__init__(UpdateStatuses, UpdateStatus, [ArtifactKind, UpdateState])

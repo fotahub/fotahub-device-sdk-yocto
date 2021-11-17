@@ -1,4 +1,4 @@
-from fotahubclient.json_document_models import ArtifactKind, InstalledArtifacts, InstalledArtifactInfo
+from fotahubclient.json_document_models import ArtifactKind, InstalledArtifacts, InstalledArtifact
 from fotahubclient.os_updater import OSUpdater
 from fotahubclient.app_updater import AppUpdater
 
@@ -16,7 +16,7 @@ class InstalledArtifactsDescriber(object):
 
     def describe_installed_os(self):
         os_updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
-        return InstalledArtifactInfo(
+        return InstalledArtifact(
             os_updater.os_distro_name, 
             ArtifactKind.OperatingSystem, 
             os_updater.get_installed_os_revision(),
@@ -26,7 +26,7 @@ class InstalledArtifactsDescriber(object):
     def describe_installed_apps(self, artifact_names=[]):
         app_updater = AppUpdater(self.config.app_ostree_repo_path, self.config.ostree_gpg_verify)
         return [
-            InstalledArtifactInfo(
+            InstalledArtifact(
                 name, 
                 ArtifactKind.Application, 
                 app_updater.resolve_installed_revision(name)

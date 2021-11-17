@@ -1,10 +1,10 @@
 import os
 import logging
-from datetime import datetime
+import time
 from re import S
 
-from fotahubclient.json_document_models import UPDATE_DATE_TIME_FORMAT, ArtifactKind
-from fotahubclient.json_document_models import UpdateStatuses, UpdateStatusInfo
+from fotahubclient.json_document_models import ArtifactKind
+from fotahubclient.json_document_models import UpdateStatuses, UpdateStatus
 
 class UpdateStatusTracker(object):
 
@@ -18,52 +18,57 @@ class UpdateStatusTracker(object):
             self.update_statuses = UpdateStatuses.load_update_statuses(self.config.update_status_path)
         return self 
 
-    def record_os_update_status(self, status, revision=None, message=None, save_instantly=False):
-        self.__record_update_status(self.config.os_distro_name, ArtifactKind.OperatingSystem, status, revision, message)
+    def record_os_update_status(self, state=None, revision=None, status=True, message=None, save_instantly=False):
+        self.__record_update_status(self.config.os_distro_name, ArtifactKind.OperatingSystem, state, revision, status, message)
         if save_instantly:
             UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path, True)
 
-    def record_app_update_status(self, name, status, revision=None, message=None):
-        self.__record_update_status(name, ArtifactKind.Application, status, revision, message)
+    def record_app_update_status(self, name, state=None, revision=None, status=True, message=None):
+        self.__record_update_status(name, ArtifactKind.Application, state, revision, status, message)
 
-    def record_fw_update_status(self, name, status, revision=None, message=None):
-        self.__record_update_status(name, ArtifactKind.Firmware, status, revision, message)
+    def record_fw_update_status(self, name, state=None, revision=None, status=True, message=None):
+        self.__record_update_status(name, ArtifactKind.Firmware, state, revision, status, message)
 
-    def __record_update_status(self, artifact_name, artifact_kind, status, revision=None, message=None):
-        update_status_info = self.__lookup_update_status(artifact_name, artifact_kind)
-        if update_status_info is not None:
-            if update_status_info.status.is_final():
-                update_status_info.reinit(
+    def __record_update_status(self, artifact_name, artifact_kind, state, revision=None, status=True, message=None):
+        update_status = self.__lookup_update_status(artifact_name, artifact_kind)
+        if update_status is not None:
+            if not update_status.is_final():
+                update_status.update(
                     revision, 
-                    datetime.now().strftime(UPDATE_DATE_TIME_FORMAT),
+                    state,
                     status,
                     message)
             else:
-                if revision is not None:
-                    update_status_info.revision = revision
-                update_status_info.status = status
-                if message is not None:
-                    update_status_info.message = message
+                update_status.reinit(
+                    revision, 
+                    self.__get_gmt_timestamp(),
+                    state,
+                    status,
+                    message)
         else:
             self.__append_update_status(
-                UpdateStatusInfo(
+                UpdateStatus(
                     artifact_name, 
                     artifact_kind, 
                     revision,
-                    datetime.now().strftime(UPDATE_DATE_TIME_FORMAT),
+                    self.__get_gmt_timestamp(),
+                    state,
                     status,
                     message
                 )
             )
-        
+    
+    def __get_gmt_timestamp(self):
+        return int(time.mktime(time.gmtime()))
+
     def __lookup_update_status(self, artifact_name, artifact_kind):
-        for update_status_info in self.update_statuses.update_statuses:
-            if update_status_info.artifact_name == artifact_name and update_status_info.artifact_kind == artifact_kind:
-                return update_status_info
+        for update_status in self.update_statuses.update_statuses:
+            if update_status.artifact_name == artifact_name and update_status.artifact_kind == artifact_kind:
+                return update_status
         return None
 
-    def __append_update_status(self, update_status_info):
-        self.update_statuses.update_statuses.append(update_status_info)
+    def __append_update_status(self, update_status):
+        self.update_statuses.update_statuses.append(update_status)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path)
