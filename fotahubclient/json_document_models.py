@@ -60,7 +60,7 @@ class UpdateStatus(object):
         self.message = message
 
     def is_final(self):
-        return self.state.is_final()
+        return self.state.is_final() or not self.status
 
 class UpdateStatuses(object):
     def __init__(self, update_statuses=None):
