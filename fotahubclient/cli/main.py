@@ -6,6 +6,7 @@ from fotahubclient.cli.cli import CLI
 from fotahubclient.config_loader import ConfigLoader
 from fotahubclient.cli.command_interpreter import CommandInterpreter
 import fotahubclient.common_constants as constants
+from fotahubclient.system_helper import join_exception_messages
 
 def main():
     config = None
@@ -25,7 +26,7 @@ def main():
         if config is not None and config.stacktrace:
             print(''.join(traceback.format_exception(type(err), err, err.__traceback__)), file=sys.stderr)
         else:
-            print('ERROR: ' + str(err), file=sys.stderr)
+            print('ERROR: ' + join_exception_messages(err), file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':

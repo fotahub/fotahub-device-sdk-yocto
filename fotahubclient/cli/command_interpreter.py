@@ -1,12 +1,14 @@
 import logging
 
 from fotahubclient.os_update_agents import OSUpdateInitiator, OSUpdateReverter, OSUpdateFinalizer
+from fotahubclient.app_manager import AppManager
 from fotahubclient.update_status_tracker import UpdateStatusDescriber
-from fotahubclient.installed_artifacts_describer import InstalledArtifactsDescriber
+from fotahubclient.installed_artifacts_tracker import InstalledArtifactsDescriber
 
 UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
 REVERT_OPERATING_SYSTEM_CMD = 'revert-operating-system'
 FINISH_OPERATING_SYSTEM_CHANGE_CMD = 'finish-operating-system-change'
+INSTALL_APPLICATIONS_CMD = 'install-applications'
 UPDATE_APPLICATION_CMD = 'update-application'
 REVERT_APPLICATION_CMD = 'revert-application'
 DESCRIBE_INSTALLED_ARTIFACTS_CMD = 'describe-installed-artifacts'
@@ -25,6 +27,8 @@ class CommandInterpreter(object):
             self.revert_operating_system()
         elif args.command == FINISH_OPERATING_SYSTEM_CHANGE_CMD:
             self.finish_operating_system_change()
+        elif args.command == INSTALL_APPLICATIONS_CMD:
+            self.install_applications()
         elif args.command == UPDATE_APPLICATION_CMD:
             self.update_application(args.name, args.revision)
         elif args.command == REVERT_APPLICATION_CMD:
@@ -52,13 +56,23 @@ class CommandInterpreter(object):
         finalizer = OSUpdateFinalizer(self.config)
         finalizer.finalize_os_update()
 
+    def install_applications(self):
+        self.logger.debug('Installing and launching applications')
+        
+        manager = AppManager(self.config)
+        manager.install_and_launch_apps()
+
     def update_application(self, name, revision):
         self.logger.debug('Updating ' + name + ' application to revision ' + revision)
-        raise NotImplementedError('Not yet implemented')
+        
+        manager = AppManager(self.config)
+        manager.update_app(name, revision)
 
     def revert_application(self, name):
         self.logger.debug('Reverting ' + name + ' application to previous revision ')
-        raise NotImplementedError('Not yet implemented')
+        
+        manager = AppManager(self.config)
+        manager.revert_app(name)
 
     def describe_installed_artifacts(self, artifact_names=[]):
         self.logger.debug('Retrieving installed artifacts')

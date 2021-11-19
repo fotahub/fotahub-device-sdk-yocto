@@ -29,5 +29,6 @@ setup(
     entry_points='''
         [console_scripts]
         fotahub=fotahubclient.cli.main:main
+        fotahubd=fotahubclient.daemon.main:main
     ''',
 )

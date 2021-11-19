@@ -1,5 +1,6 @@
-import logging
+import os
 import shutil
+import logging
 
 from pydbus import SystemBus
 
@@ -18,10 +19,17 @@ class SystemDOperator(object):
 
     def has_unit(self, service_name):
         return self.list_units(service_name)[0][2] != 'not-found'
+
+    def is_unit_active(self, service_name):
+        return self.list_units(service_name)[0][2] == 'active'
     
     def create_unit(self, service_name, service_manifest_path):
-        self.logger.debug("Intstalling '{}' service as per '{}' manifest as systemd unit".format(service_name, service_manifest_path))
+        self.logger.debug("Installing '{}' service as per '{}' manifest as systemd unit".format(service_name, service_manifest_path))
         shutil.copy(service_manifest_path, SYSTEMD_UNIT_MANIFEST_PATH_PATTERN.format(service_name))
+
+    def delete_unit(self, service_name):
+        self.logger.debug("Deleting '{}' service".format(service_name))
+        os.remove(SYSTEMD_UNIT_MANIFEST_PATH_PATTERN.format(service_name))
 
     def start_unit(self, service_name, enable_only=False):
         self.logger.debug("Starting '{}' service".format(service_name))

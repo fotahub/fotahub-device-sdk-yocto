@@ -3,6 +3,13 @@ import logging
 import subprocess
 import shlex
 
+def join_exception_messages(err, message=''):
+    if err is not None:
+        message = (message + ': ' if message else '') + str(err)
+        return join_exception_messages(err.__cause__, message)
+    else:
+        return message
+
 def run_hook_command(title, command, args=[]):
     if command is not None:
         logging.getLogger().info("Running {}".format(title))
@@ -38,7 +45,7 @@ def reboot_system():
     except subprocess.CalledProcessError as err:
         raise OSError("Failed to reboot system") from err
 
-def chown_tree(path, uid, gid):
+def chowntree(path, uid, gid):
     logging.getLogger().debug("Changing user/group ownership of each file in {} to {}/{}".format(path, str(uid), str(gid)))
 
     os.chown(path, uid, gid)
@@ -47,3 +54,6 @@ def chown_tree(path, uid, gid):
             os.lchown(os.path.join(dir_path, dir_name), uid, gid)
         for file_name in file_names:
             os.lchown(os.path.join(dir_path, file_name), uid, gid)
+
+def touch(path):
+    open(path, 'a').close()

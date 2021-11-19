@@ -71,7 +71,7 @@ class OSUpdateFinalizer(object):
                         updater.revert_os_update()
                 
                 elif updater.is_reverting_os_update():
-                    tracker.record_os_update_status(state=UpdateState.reverted, revision=updater.get_pending_os_revision())
+                    tracker.record_os_update_status(state=UpdateState.reverted)
                     updater.discard_os_update()
                 
                 else:

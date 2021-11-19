@@ -2,6 +2,7 @@ import os
 import configparser
 from configparser import ConfigParser
 
+INSTALLED_ARTIFACTS_PATH_DEFAULT = '/var/log/fotahub/installed-artifacts.json'
 UPDATE_STATUS_PATH_DEFAULT = '/var/log/fotahub/update-status.json'
 
 SYSTEM_CONFIG_PATH = '/etc/fotahub/fotahub.config'
@@ -9,11 +10,13 @@ USER_CONFIG_FILE_NAME = '.fotahub'
 
 class ConfigLoader(object):
     
-    def __init__(self, config_path=SYSTEM_CONFIG_PATH, update_status_path=None, verbose=False, stacktrace=False):
+    def __init__(self, config_path=SYSTEM_CONFIG_PATH, verbose=False, stacktrace=False):
         self.config_path = config_path
-        self.update_status_path = update_status_path
         
         self.ostree_gpg_verify = False
+
+        self.installed_artifacts_path = None
+        self.update_status_path = None
         
         self.verbose = verbose
         self.stacktrace = stacktrace
@@ -21,6 +24,9 @@ class ConfigLoader(object):
         self.os_distro_name = None
         self.os_update_verification_command = None
         self.os_update_self_test_command = None
+
+        self.app_ostree_repo_path = None
+        self.app_install_root = None
 
     def load(self):
         user_config_path = os.path.expanduser("~") + '/' + USER_CONFIG_FILE_NAME
@@ -33,11 +39,10 @@ class ConfigLoader(object):
             config = ConfigParser()
             config.read(self.config_path)
 
-            if config.getboolean('General', 'OSTreeGPGVerify', fallback=False):
-                self.ostree_gpg_verify = True
+            self.ostree_gpg_verify = config.getboolean('General', 'OSTreeGPGVerify', fallback=False)
 
-            if self.update_status_path is None:
-                self.update_status_path = config.get('General', 'UpdateStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
+            self.installed_artifacts_path = config.get('General', 'InstalledArtifactsPath', fallback=INSTALLED_ARTIFACTS_PATH_DEFAULT)
+            self.update_status_path = config.get('General', 'UpdateStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
 
             if config.getboolean('General', 'Verbose', fallback=False):
                 self.verbose = True

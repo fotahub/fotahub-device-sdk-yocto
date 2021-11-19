@@ -2,6 +2,9 @@
 # Whether to enable GPG verification when pulling updates for operating system or applications
 OSTreeGPGVerify = false
 
+# Where to store status information about installed operating system, applications and firmware
+InstalledArtifactPath = /var/log/fotahub/installed-artifacts.json
+
 # Where to store status information about latest operating system and application updates
 UpdateStatusPath = /var/log/fotahub/update-status.json
 

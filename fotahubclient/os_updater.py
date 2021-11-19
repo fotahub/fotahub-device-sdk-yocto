@@ -37,7 +37,7 @@ class OSUpdater(object):
         try:
             sysroot = OSTree.Sysroot.new_default()
             
-            self.logger.info("Opening OS OSTree repo located at '{}'".format(OSTREE_SYSTEM_REPOSITORY_PATH))
+            self.logger.debug("Opening OS OSTree repo located at '{}'".format(OSTREE_SYSTEM_REPOSITORY_PATH))
             sysroot.load(None)
             sysroot.cleanup(None)
             [_, repo] = sysroot.get_repo()
@@ -65,11 +65,12 @@ class OSUpdater(object):
         return rollback.get_csum() if rollback is not None else None
 
     def pull_os_update(self, revision):
+        self.logger.info("Pulling OS update with revision '{}'".format(revision))
+        
         self.ostree_repo.pull_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
 
     def __stage_os_update(self, revision):
-        self.logger.info(
-            "Staging OS update with revision '{}'".format(revision))
+        self.logger.info("Staging OS update with revision '{}'".format(revision))
         if self.has_pending_os_revision():
             raise OSTreeError("Cannot stage any new OS update when some other OS update is still pending")
 

@@ -1,15 +1,11 @@
 import os
-import logging
 import time
-from re import S
 
-from fotahubclient.json_document_models import ArtifactKind
-from fotahubclient.json_document_models import UpdateStatuses, UpdateStatus
+from fotahubclient.json_document_models import ArtifactKind, UpdateStatuses, UpdateStatus
 
 class UpdateStatusTracker(object):
 
     def __init__(self, config):
-        self.logger = logging.getLogger()
         self.config = config
         self.update_statuses = UpdateStatuses()
 
@@ -29,11 +25,11 @@ class UpdateStatusTracker(object):
     def record_fw_update_status(self, name, state=None, revision=None, status=True, message=None):
         self.__record_update_status(name, ArtifactKind.Firmware, state, revision, status, message)
 
-    def __record_update_status(self, artifact_name, artifact_kind, state, revision=None, status=True, message=None):
+    def __record_update_status(self, artifact_name, artifact_kind, state, revision, status, message):
         update_status = self.__lookup_update_status(artifact_name, artifact_kind)
         if update_status is not None:
-            if not update_status.is_final():
-                update_status.update(
+            if not update_status.is_final(state):
+                update_status.amend(
                     revision, 
                     state,
                     status,
@@ -80,6 +76,10 @@ class UpdateStatusDescriber(object):
 
     def describe_update_status(self, artifact_names=[]):
         if os.path.isfile(self.config.update_status_path) and os.path.getsize(self.config.update_status_path) > 0:
-            return UpdateStatuses.dump_update_statuses(self.config.update_status_path)
+            update_statuses = UpdateStatuses.load_update_statuses(self.config.update_status_path)
+            return UpdateStatuses([
+                update_status for update_status in update_statuses.update_statuses 
+                    if not artifact_names or update_status.artifact_name in artifact_names
+            ]).serialize()
         else:
             return UpdateStatuses().serialize()

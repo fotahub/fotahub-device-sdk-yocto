@@ -7,15 +7,16 @@ from fotahubclient.config_loader import ConfigLoader
 import fotahubclient.common_constants as constants
 from fotahubclient.os_update_agents import OSUpdateFinalizer
 from fotahubclient.app_manager import AppManager
+from fotahubclient.system_helper import join_exception_messages
 
 def run(config):
     logging.getLogger().debug('Finalizing OS update or rollback in case any such has just happened')
-    # finalizer = OSUpdateFinalizer(config)
-    # finalizer.finalize_os_update()
+    finalizer = OSUpdateFinalizer(config)
+    finalizer.finalize_os_update()
 
     logging.getLogger().debug('Installing and launching applications')
-    # manager = AppManager(config)
-    # manager.install_and_launch_apps()
+    manager = AppManager(config)
+    manager.install_and_launch_apps()
 
 def main():
     config = None
@@ -34,7 +35,7 @@ def main():
         if config is not None and config.stacktrace:
             print(''.join(traceback.format_exception(type(err), err, err.__traceback__)), file=sys.stderr)
         else:
-            print('ERROR: ' + str(err), file=sys.stderr)
+            print('ERROR: ' + join_exception_messages(err), file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':
