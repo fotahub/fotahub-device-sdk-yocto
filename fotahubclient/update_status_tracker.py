@@ -41,7 +41,7 @@ class UpdateStatusTracker(object):
             else:
                 update_status.reinit(
                     revision, 
-                    self.__get_gmt_timestamp(),
+                    self.__get_utc_timestamp(),
                     state,
                     status,
                     message)
@@ -51,15 +51,15 @@ class UpdateStatusTracker(object):
                     artifact_name, 
                     artifact_kind, 
                     revision,
-                    self.__get_gmt_timestamp(),
+                    self.__get_utc_timestamp(),
                     state,
                     status,
                     message
                 )
             )
     
-    def __get_gmt_timestamp(self):
-        return int(time.mktime(time.gmtime()))
+    def __get_utc_timestamp(self):
+        return int(time.time())
 
     def __lookup_update_status(self, artifact_name, artifact_kind):
         for update_status in self.update_statuses.update_statuses:
