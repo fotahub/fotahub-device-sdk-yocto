@@ -65,7 +65,7 @@ class OSUpdateFinalizer(object):
                     [success, message] = run_hook_command('OS update self test', self.config.os_update_self_test_command)
                     if success:
                         updater.confirm_os_update()
-                        tracker.record_os_update_status(state=UpdateState.confirmed)
+                        tracker.record_os_update_status(message='OS update successfully completed', state=UpdateState.confirmed)
                     else:
                         tracker.record_os_update_status(message=message, save_instantly=True)
                         updater.revert_os_update()
