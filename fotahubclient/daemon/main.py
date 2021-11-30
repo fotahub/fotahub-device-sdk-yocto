@@ -14,9 +14,9 @@ def run(config):
     finalizer = OSUpdateFinalizer(config)
     finalizer.finalize_os_update()
 
-    logging.getLogger().debug('Deploying and launching applications')
+    logging.getLogger().debug('Deploying applications and running those configured to do so automatically')
     manager = AppManager(config)
-    manager.deploy_and_launch_apps()
+    manager.deploy_and_run_apps()
 
 def main():
     config = None

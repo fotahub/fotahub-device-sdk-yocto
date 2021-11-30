@@ -25,11 +25,11 @@ class AppManager(object):
     def __is_app_deployed(self, name):
         return os.path.isdir(self.__to_app_deploy_path(name))
 
-    def __is_app_launched_automatically(self, name):
-        return os.path.isfile(self.__to_app_deploy_path(name) + '/' + constants.APP_AUTOLAUNCH_MARKER_FILE_NAME)
+    def __is_run_app_automatically(self, name):
+        return os.path.isfile(self.__to_app_deploy_path(name) + '/' + constants.APP_AUTORUN_MARKER_FILE_NAME)
 
-    def __set_launch_app_automatically(self, name, automatic):
-        marker_file = self.__to_app_deploy_path(name) + '/' + constants.APP_AUTOLAUNCH_MARKER_FILE_NAME
+    def __set_run_app_automatically(self, name, automatic):
+        marker_file = self.__to_app_deploy_path(name) + '/' + constants.APP_AUTORUN_MARKER_FILE_NAME
         if automatic:
             if not os.path.isfile(marker_file):
                 touch(marker_file)
@@ -52,9 +52,9 @@ class AppManager(object):
             self.logger.info("Deleting '{}' application".format(name))
             shutil.rmtree(self.__to_app_deploy_path(name))
 
-    def __launch_app(self, name):
+    def __run_app(self, name):
         if self.__is_app_deployed(name):
-            self.logger.info("Launching '{}' application".format(name))
+            self.logger.info("Running '{}' application".format(name))
             self.runc.run_container(name, self.__to_app_deploy_path(name))
 
     def __halt_app(self, name):
@@ -62,7 +62,10 @@ class AppManager(object):
             self.logger.info("Halting '{}' application".format(name))
             self.runc.delete_container(name)
 
-    def deploy_and_launch_apps(self):
+    def configure_app(self, name, run_automatically=True):
+        self.__set_run_app_automatically(name, run_automatically)
+
+    def deploy_and_run_apps(self):
         with InstalledArtifactsTracker(self.config) as tracker:
             names = self.updater.list_app_names()
 
@@ -74,18 +77,24 @@ class AppManager(object):
                     self.__deploy_app_revision(name, revision)
                     tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
 
-                    if self.__is_app_launched_automatically(name):
-                        self.__launch_app(name)
+                    if self.__is_run_app_automatically(name):
+                        self.__run_app(name)
                         tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
                 except Exception as err:
                     tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     deploy_err = True
         
         if deploy_err:
-            raise RuntimeError("Failed to deploy or launch one or several applications (run 'fotahub describe-installed-artifacts' to get more details)") 
+            raise RuntimeError("Failed to deploy or run one or several applications (run 'fotahub describe-installed-artifacts' to get more details)") 
 
-    def configure_app(self, name, launch_automatically=True):
-        self.__set_launch_app_automatically(name, launch_automatically)
+    def run_app(self, name):
+        with InstalledArtifactsTracker(self.config) as install_tracker:
+            try:
+                self.__run_app(name)
+                install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
+            except Exception as err:
+                install_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
+                raise RuntimeError("Failed to run '{}' application".format(name)) from err
 
     def update_app(self, name, revision):
         with InstalledArtifactsTracker(self.config) as install_tracker:
@@ -105,8 +114,8 @@ class AppManager(object):
                     install_tracker.record_app_install_revision_change(name, revision, updating=True)
                     update_tracker.record_app_update_status(name, state=UpdateState.applied)
 
-                    if self.__is_app_launched_automatically(name):
-                        self.__launch_app(name)
+                    if self.__is_run_app_automatically(name):
+                        self.__run_app(name)
                         install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
 
                     # TODO Implement app self testing and revert app if the same fails 
@@ -131,8 +140,8 @@ class AppManager(object):
                     self.__deploy_app_revision(name, revision)
                     install_tracker.record_app_install_revision_change(name, revision, updating=False)
 
-                    if self.__is_app_launched_automatically(name):
-                        self.__launch_app(name)
+                    if self.__is_run_app_automatically(name):
+                        self.__run_app(name)
                         install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
 
                     update_tracker.record_app_update_status(name, state=UpdateState.reverted, message='Update reverted due to application-level or external request')

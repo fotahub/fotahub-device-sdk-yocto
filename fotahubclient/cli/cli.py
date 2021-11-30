@@ -30,8 +30,12 @@ class CLI(object):
         cmd = cmds.add_parser(commands.FINISH_OPERATING_SYSTEM_CHANGE_CMD, help='finalize an operating system update or rollback (after reboot)', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
 
-        cmd = cmds.add_parser(commands.DEPLOY_APPLICATIONS_CMD, help='deploy available applications', formatter_class=CommandHelpFormatter)
+        cmd = cmds.add_parser(commands.DEPLOY_APPLICATIONS_CMD, help='deploy applications and run those configured to do so automatically', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
+
+        cmd = cmds.add_parser(commands.RUN_APPLICATION_CMD, help='run an application', formatter_class=CommandHelpFormatter)
+        set_command_parser_titles(cmd)
+        cmd.add_argument('-n', '--name', required=True, help='name of application to be run')
 
         cmd = cmds.add_parser(commands.UPDATE_APPLICATION_CMD, help='update an application', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)

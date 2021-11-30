@@ -8,7 +8,8 @@ from fotahubclient.installed_artifacts_tracker import InstalledArtifactsDescribe
 UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
 REVERT_OPERATING_SYSTEM_CMD = 'revert-operating-system'
 FINISH_OPERATING_SYSTEM_CHANGE_CMD = 'finish-operating-system-change'
-DEPLOY_APPLICATIONS_CMD = 'install-applications'
+DEPLOY_APPLICATIONS_CMD = 'deploy-applications'
+RUN_APPLICATION_CMD = 'run-application'
 UPDATE_APPLICATION_CMD = 'update-application'
 REVERT_APPLICATION_CMD = 'revert-application'
 DESCRIBE_INSTALLED_ARTIFACTS_CMD = 'describe-installed-artifacts'
@@ -28,7 +29,9 @@ class CommandInterpreter(object):
         elif args.command == FINISH_OPERATING_SYSTEM_CHANGE_CMD:
             self.finish_operating_system_change()
         elif args.command == DEPLOY_APPLICATIONS_CMD:
-            self.install_applications()
+            self.deploy_applications()
+        elif args.command == RUN_APPLICATION_CMD:
+            self.run_application(args.name)
         elif args.command == UPDATE_APPLICATION_CMD:
             self.update_application(args.name, args.revision)
         elif args.command == REVERT_APPLICATION_CMD:
@@ -56,11 +59,17 @@ class CommandInterpreter(object):
         finalizer = OSUpdateFinalizer(self.config)
         finalizer.finalize_os_update()
 
-    def install_applications(self):
-        self.logger.debug('Installing and launching applications')
+    def deploy_applications(self):
+        self.logger.debug('Deploying applications and running those configured to do so automatically')
         
         manager = AppManager(self.config)
-        manager.deploy_and_launch_apps()
+        manager.deploy_and_run_apps()
+
+    def run_application(self, name):
+        self.logger.debug('Running ' + name + ' application')
+        
+        manager = AppManager(self.config)
+        manager.run_app(name)
 
     def update_application(self, name, revision):
         self.logger.debug('Updating ' + name + ' application to revision ' + revision)
