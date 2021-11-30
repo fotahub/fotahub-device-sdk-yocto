@@ -123,7 +123,7 @@ class InstalledArtifactsDescriber(object):
             InstalledArtifact(
                 name, 
                 ArtifactKind.Application, 
-                app_updater.get_app_install_revision(name),
+                app_updater.get_app_deploy_revision(name),
                 None
             ) for name in app_updater.list_app_names() 
                 if not artifact_names or name in artifact_names

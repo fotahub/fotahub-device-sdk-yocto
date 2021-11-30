@@ -33,4 +33,4 @@ OSUpdateSelfTestCommand = bash -c 'echo "The freshly applied OS update runs very
 AppOSTreeRepoPath = /apps/ostree/repo
 
 # Root location for application installations
-AppInstallRoot = /apps
+AppDeployRoot = /apps

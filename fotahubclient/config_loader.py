@@ -26,7 +26,7 @@ class ConfigLoader(object):
         self.os_update_self_test_command = None
 
         self.app_ostree_repo_path = None
-        self.app_install_root = None
+        self.app_deploy_root = None
 
     def load(self):
         user_config_path = os.path.expanduser("~") + '/' + USER_CONFIG_FILE_NAME
@@ -54,7 +54,7 @@ class ConfigLoader(object):
             self.os_update_self_test_command = config.get('OS', 'OSUpdateSelfTestCommand', fallback=None)
 
             self.app_ostree_repo_path = config.get('App', 'AppOSTreeRepoPath')
-            self.app_install_root = config.get('App', 'AppInstallRoot')
+            self.app_deploy_root = config.get('App', 'AppDeployRoot')
         except configparser.NoSectionError as err:
             raise ValueError("No '{}' section in FotaHub configuration file {}".format(err.section, self.config_path))
         except configparser.NoOptionError as err:

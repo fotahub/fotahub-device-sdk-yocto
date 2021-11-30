@@ -36,7 +36,7 @@ class AppUpdater(object):
     def list_app_names(self):
         return [ref.split(':')[1] if ':' in ref else ref for ref in self.ostree_repo.list_ostree_refs()]
 
-    def get_app_install_revision(self, name):
+    def get_app_deploy_revision(self, name):
         return self.ostree_repo.resolve_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, name)
 
     def get_app_rollback_revision(self, name, installed_artifacts_path):
