@@ -11,7 +11,7 @@ class ArtifactKind(Enum):
 
 class LifecycleState(Enum):
     available = 1
-    installed = 2
+    ready = 2
     running = 3
     finished = 4
 

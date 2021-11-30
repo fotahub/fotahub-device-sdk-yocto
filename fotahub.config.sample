@@ -21,7 +21,7 @@ OSDistroName = fotahub-os-raspberrypi3
 # Optional hook command used to verify whether operating system update is consistent;
 # executed after download of operating system update but before applying it and rebooting the system;
 # gets the revision of the downloaded operation system update passed in as first and only argument
-OSUpdateVerificationCommand = bash -c 'echo "The downloaded OS update revision $1 looks good!"'
+OSUpdateVerificationCommand = bash -c 'echo "The downloaded OS update (revision $1) looks good!"'
 
 # Optional hook command used to validate whether operating system update works as expected;
 # executed after having applied operating system update and successfully rebooted the system;

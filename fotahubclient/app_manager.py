@@ -4,7 +4,7 @@ import logging
 
 from fotahubclient.app_updater import AppUpdater
 from fotahubclient.json_document_models import LifecycleState, UpdateState
-from fotahubclient.systemd_operator import SystemDOperator
+from fotahubclient.runc_operator import RunCOperator
 from fotahubclient.installed_artifacts_tracker import InstalledArtifactsTracker
 from fotahubclient.update_status_tracker import UpdateStatusTracker
 import fotahubclient.common_constants as constants
@@ -16,22 +16,14 @@ class AppManager(object):
         self.logger = logging.getLogger()
         self.config = config
 
-        self.systemd = SystemDOperator()
+        self.runc = RunCOperator()
         self.updater = AppUpdater(self.config.app_ostree_repo_path, self.config.ostree_gpg_verify)
 
     def __to_app_install_path(self, name):
             return self.config.app_install_root + '/' + name
 
     def __is_app_installed(self, name):
-        return os.path.isfile(self.__to_app_install_path(name) + '/' + constants.APP_INSTALLED_MARKER_FILE_NAME)
-
-    def __set_app_installed(self, name):
-        marker_file = self.__to_app_install_path(name) + '/' + constants.APP_INSTALLED_MARKER_FILE_NAME
-        if not os.path.isfile(marker_file):
-            touch(marker_file)
-
-    def __to_app_service_manifest_path(self, name):
-        return self.__to_app_install_path(name) + '/' + constants.APP_SERVICE_MANIFEST_FILE_NAME
+        return os.path.isdir(self.__to_app_install_path(name))
 
     def __is_app_launched_automatically(self, name):
         return os.path.isfile(self.__to_app_install_path(name) + '/' + constants.APP_AUTOLAUNCH_MARKER_FILE_NAME)
@@ -45,29 +37,30 @@ class AppManager(object):
             if os.path.isfile(marker_file):
                 os.remove(marker_file)
 
-    def __install_app(self, name, revision):
-        self.logger.info("{} '{}' application revision '{}'".format('Installing' if not self.__is_app_installed(name) else 'Reinstalling', name, revision))
-
+    def __deploy_app_revision(self, name, revision):
+        self.logger.info("(Re-)deploying '{}' application revision '{}'".format(name, revision))
         self.updater.checkout_app_revision(name, revision, self.__to_app_install_path(name))
-        self.systemd.create_unit(name, self.__to_app_service_manifest_path(name))
-        self.__set_app_installed(name)
+
+    def __apply_app_update(self, name, revision):
+        self.logger.info("Applying '{}' application update to revision '{}'".format(name, revision))
+        self.updater.checkout_app_revision(name, revision, self.__to_app_install_path(name))
 
     def __delete_app(self, name):
         if self.__is_app_installed(name):
-            self.logger.info("Deleting '{}' application".format(name))
+            self.__halt_app(name)
 
-            self.systemd.delete_unit(name)
+            self.logger.info("Deleting '{}' application".format(name))
             shutil.rmtree(self.__to_app_install_path(name))
 
     def __launch_app(self, name):
-        if self.__is_app_installed(name) and not self.systemd.is_unit_active(name):
+        if self.__is_app_installed(name):
             self.logger.info("Launching '{}' application".format(name))
-            self.systemd.start_unit(name)
+            self.runc.run_container(name)
 
     def __halt_app(self, name):
-        if self.__is_app_installed(name) and self.systemd.is_unit_active(name):
+        if self.__is_app_installed(name):
             self.logger.info("Halting '{}' application".format(name))
-            self.systemd.stop_unit(name)
+            self.runc.delete_container(name)
 
     def install_and_launch_apps(self):
         with InstalledArtifactsTracker(self.config) as tracker:
@@ -78,20 +71,13 @@ class AppManager(object):
                 tracker.register_app(name, self.updater.get_app_install_revision(name))
                 try:
                     revision = self.updater.get_app_install_revision(name)
-                    self.__install_app(name, revision)
-                    tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.installed)
-                except Exception as err:
-                    tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
-                    install_err = True
+                    self.__deploy_app_revision(name, revision)
+                    tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
 
-            self.systemd.reload()
-
-            for name in names:
-                try:
                     if self.__is_app_launched_automatically(name):
                         self.__launch_app(name)
                         tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
-                except Exception:
+                except Exception as err:
                     tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     install_err = True
         
@@ -107,7 +93,7 @@ class AppManager(object):
                 self.logger.info("Updating '{}' application to revision '{}'".format(name, revision))
                 try:
                     self.__halt_app(name)
-                    install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.installed)
+                    install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
 
                     self.updater.pull_app_update(name, revision)
                     update_tracker.record_app_update_status(name, state=UpdateState.downloaded, revision=revision)
@@ -115,8 +101,7 @@ class AppManager(object):
                     # TODO Implement checksum/signature verification
                     update_tracker.record_app_update_status(name, state=UpdateState.verified)
                     
-                    self.__install_app(name, revision)
-                    self.systemd.reload()
+                    self.__apply_app_update(name, revision)
                     install_tracker.record_app_install_revision_change(name, revision, updating=True)
                     update_tracker.record_app_update_status(name, state=UpdateState.applied)
 
@@ -125,7 +110,7 @@ class AppManager(object):
                         install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
 
                     # TODO Implement app self testing and revert app if the same fails 
-                    update_tracker.record_app_update_status(name, state=UpdateState.confirmed)
+                    update_tracker.record_app_update_status(name, state=UpdateState.confirmed, message='Application update successfully completed')
                 except Exception as err:
                     install_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     update_tracker.record_app_update_status(name, revision=revision, status=False, message=str(err))
@@ -141,10 +126,9 @@ class AppManager(object):
                 self.logger.info("Reverting '{}' application to revision '{}'".format(name, revision))
                 try:
                     self.__halt_app(name)
-                    install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.installed)
+                    install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
 
-                    self.__install_app(name, revision)
-                    self.systemd.reload()
+                    self.__deploy_app_revision(name, revision)
                     install_tracker.record_app_install_revision_change(name, revision, updating=False)
 
                     if self.__is_app_launched_automatically(name):

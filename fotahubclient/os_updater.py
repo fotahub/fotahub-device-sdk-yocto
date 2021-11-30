@@ -65,12 +65,12 @@ class OSUpdater(object):
         return rollback.get_csum() if rollback is not None else None
 
     def pull_os_update(self, revision):
-        self.logger.info("Pulling OS update with revision '{}'".format(revision))
+        self.logger.info("Pulling OS revision '{}'".format(revision))
         
         self.ostree_repo.pull_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
 
     def __stage_os_update(self, revision):
-        self.logger.info("Staging OS update with revision '{}'".format(revision))
+        self.logger.info("Staging OS revision '{}'".format(revision))
         if self.has_pending_os_revision():
             raise OSTreeError("Cannot stage any new OS update when some other OS update is still pending")
 
@@ -85,12 +85,12 @@ class OSUpdater(object):
 
             [result, _] = self.sysroot.stage_tree(osname, checksum, origin, booted_deployment, None, None)
             if not result:
-                raise OSTreeError("Failed to stage OS update with revision '{}'".format(revision))
+                raise OSTreeError("Failed to stage OS revision '{}'".format(revision))
         except GLib.Error as err:
-            raise OSTreeError("Failed to stage OS update with revision '{}'".format(revision)) from err
+            raise OSTreeError("Failed to stage OS revision '{}'".format(revision)) from err
 
     def apply_os_update(self, revision, max_reboot_failures):
-        self.logger.info("Applying OS update")
+        self.logger.info("Applying OS update to revision {}".format(revision))
         if self.is_applying_os_update():
             raise OSTreeError("Cannot apply any new OS update when the some other OS update is still about to be applied")
         if self.is_reverting_os_update():

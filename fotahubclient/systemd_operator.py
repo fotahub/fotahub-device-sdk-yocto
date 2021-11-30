@@ -1,11 +1,25 @@
 import os
 import shutil
 import logging
+from enum import Enum
 
 from pydbus import SystemBus
 
 SYSTEMD_UNIT_MANIFEST_NAME_PATTERN = '{}.service'
 SYSTEMD_UNIT_MANIFEST_PATH_PATTERN = '/etc/systemd/system/' + SYSTEMD_UNIT_MANIFEST_NAME_PATTERN
+
+class UnitState(Enum):
+    active = 2
+    inactive = 3
+    failed = 3
+
+    @classmethod
+    def from_descriptor(cls, descriptor):
+        if descriptor[2] == 'loaded':
+            for k, v in cls.__members__.items():
+                if k == descriptor[3]:
+                    return v
+        return None
 
 # See https://www.freedesktop.org/wiki/Software/systemd/dbus for details
 class SystemDOperator(object):
@@ -18,12 +32,9 @@ class SystemDOperator(object):
     def list_units(self, service_name):
         return self.systemd.ListUnitsByNames([SYSTEMD_UNIT_MANIFEST_NAME_PATTERN.format(service_name)])
 
-    def has_unit(self, service_name):
-        return self.list_units(service_name)[0][2] != 'not-found'
+    def get_unit_state(self, service_name):
+        return UnitState.from_descriptor(self.list_units(service_name)[0])
 
-    def is_unit_active(self, service_name):
-        return self.list_units(service_name)[0][3] == 'active'
-    
     def create_unit(self, service_name, service_manifest_path):
         self.logger.debug("Installing '{}' service as per '{}' manifest as systemd unit".format(service_name, service_manifest_path))
         shutil.copy(service_manifest_path, SYSTEMD_UNIT_MANIFEST_PATH_PATTERN.format(service_name))
