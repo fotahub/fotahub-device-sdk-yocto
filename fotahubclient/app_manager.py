@@ -38,7 +38,7 @@ class AppManager(object):
                 os.remove(marker_file)
 
     def __deploy_app_revision(self, name, revision):
-        self.logger.info("(Re-)deploying '{}' application revision '{}'".format(name, revision))
+        self.logger.info("Deploying '{}' application revision '{}'".format(name, revision))
         self.updater.checkout_app_revision(name, revision, self.__to_app_deploy_path(name))
 
     def __apply_app_update(self, name, revision):

@@ -30,7 +30,7 @@ class RunCOperator(object):
     def get_container_state(self, container_id):
         process = subprocess.run(["runc", "state", container_id], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         if process.returncode != 0:
-            return False
+            return None
         return ContainerState.from_string(json.loads(process.stdout.decode("utf-8"))['status'])
 
     def run_container(self, container_id, bundle_path):
