@@ -151,14 +151,15 @@ Commands:
         (e.g. sync raspberrypi3)
 
     all <bitbake args...>
-        Build and publish OS image as well as machine-dependent live disk image including OS and applications
+        Build and publish OS and application images,
+        and create machine-dependent live disk image including OS and applications
         (e.g. '.wic' for Raspberry Pi)
 
     all-apps <bitbake args...>
-        Build and publish image including all applications
+        Build and publish all application images
 
     app <app-name> <bitbake args...>
-        Build given application
+        Build and publish image of given application
 
     clean-all
         Clean OS and all applications

@@ -7,6 +7,7 @@ from pydbus import SystemBus
 SYSTEMD_UNIT_MANIFEST_NAME_PATTERN = '{}.service'
 SYSTEMD_UNIT_MANIFEST_PATH_PATTERN = '/etc/systemd/system/' + SYSTEMD_UNIT_MANIFEST_NAME_PATTERN
 
+# See https://www.freedesktop.org/wiki/Software/systemd/dbus for details
 class SystemDOperator(object):
     
     def __init__(self):
@@ -21,7 +22,7 @@ class SystemDOperator(object):
         return self.list_units(service_name)[0][2] != 'not-found'
 
     def is_unit_active(self, service_name):
-        return self.list_units(service_name)[0][2] == 'active'
+        return self.list_units(service_name)[0][3] == 'active'
     
     def create_unit(self, service_name, service_manifest_path):
         self.logger.debug("Installing '{}' service as per '{}' manifest as systemd unit".format(service_name, service_manifest_path))

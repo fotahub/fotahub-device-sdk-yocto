@@ -55,14 +55,21 @@ class InstalledArtifactsTracker(object):
         if installed_artifact is not None:
             installed_artifact.amend_revision_info(install_revision, updating)
         else:
-            raise ValueError("Failed to record revision change for unknown application '{}'".format(name))
+            raise ValueError("Failed to record revision change for unknown application named '{}'".format(name))
+
+    def record_fw_install_revision_change(self, name, install_revision, updating=True):
+        installed_artifact = self.__lookup_installed_artifact(name, ArtifactKind.Firmware)
+        if installed_artifact is not None:
+            installed_artifact.amend_revision_info(install_revision, updating)
+        else:
+            raise ValueError("Failed to record revision change for unknown firmware named '{}'".format(name))
 
     def record_app_lifecycle_status_change(self, name, lifecycle_state=None, status=True, message=None):
         installed_artifact = self.__lookup_installed_artifact(name, ArtifactKind.Application)
         if installed_artifact is not None:
             installed_artifact.amend_lifecycle_info(lifecycle_state, status, message)
         else:
-            raise ValueError("Failed to record lifecycle status change for unknown application '{}'".format(name))
+            raise ValueError("Failed to record lifecycle status change for unknown application named '{}'".format(name))
 
     def __lookup_installed_artifact(self, name, kind):
         for installed_artifact in self.installed_artifacts.installed_artifacts:
