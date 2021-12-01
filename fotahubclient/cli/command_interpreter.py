@@ -10,6 +10,7 @@ REVERT_OPERATING_SYSTEM_CMD = 'revert-operating-system'
 FINISH_OPERATING_SYSTEM_CHANGE_CMD = 'finish-operating-system-change'
 DEPLOY_APPLICATIONS_CMD = 'deploy-applications'
 RUN_APPLICATION_CMD = 'run-application'
+HALT_APPLICATION_CMD = 'halt-application'
 UPDATE_APPLICATION_CMD = 'update-application'
 REVERT_APPLICATION_CMD = 'revert-application'
 DESCRIBE_INSTALLED_ARTIFACTS_CMD = 'describe-installed-artifacts'
@@ -32,6 +33,8 @@ class CommandInterpreter(object):
             self.deploy_applications()
         elif args.command == RUN_APPLICATION_CMD:
             self.run_application(args.name)
+        elif args.command == HALT_APPLICATION_CMD:
+            self.halt_application(args.name)
         elif args.command == UPDATE_APPLICATION_CMD:
             self.update_application(args.name, args.revision)
         elif args.command == REVERT_APPLICATION_CMD:
@@ -70,6 +73,12 @@ class CommandInterpreter(object):
         
         manager = AppManager(self.config)
         manager.run_app(name)
+
+    def halt_application(self, name):
+        self.logger.debug('Halting ' + name + ' application')
+        
+        manager = AppManager(self.config)
+        manager.halt_app(name)
 
     def update_application(self, name, revision):
         self.logger.debug('Updating ' + name + ' application to revision ' + revision)

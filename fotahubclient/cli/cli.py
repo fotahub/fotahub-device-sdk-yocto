@@ -35,16 +35,20 @@ class CLI(object):
 
         cmd = cmds.add_parser(commands.RUN_APPLICATION_CMD, help='run an application', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
-        cmd.add_argument('-n', '--name', required=True, help='name of application to be run')
+        cmd.add_argument('-n', '--name', required=True, help='name of application to run')
+
+        cmd = cmds.add_parser(commands.HALT_APPLICATION_CMD, help='halt an application', formatter_class=CommandHelpFormatter)
+        set_command_parser_titles(cmd)
+        cmd.add_argument('-n', '--name', required=True, help='name of application to halt')
 
         cmd = cmds.add_parser(commands.UPDATE_APPLICATION_CMD, help='update an application', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
-        cmd.add_argument('-n', '--name', required=True, help='name of application to be updated')
+        cmd.add_argument('-n', '--name', required=True, help='name of application to update')
         cmd.add_argument('-r', '--revision', required=True, help='application revision to update to')
 
         cmd = cmds.add_parser(commands.REVERT_APPLICATION_CMD, help='revert an application to previous revision', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
-        cmd.add_argument('-n', '--name', required=True, help='name of application to be reverted')
+        cmd.add_argument('-n', '--name', required=True, help='name of application to revert')
 
         cmd = cmds.add_parser(commands.DESCRIBE_INSTALLED_ARTIFACTS_CMD, help='retrieve installed artifacts', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)

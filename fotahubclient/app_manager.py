@@ -96,6 +96,15 @@ class AppManager(object):
                 install_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                 raise RuntimeError("Failed to run '{}' application".format(name)) from err
 
+    def halt_app(self, name):
+        with InstalledArtifactsTracker(self.config) as install_tracker:
+            try:
+                self.__halt_app(name)
+                install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
+            except Exception as err:
+                install_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
+                raise RuntimeError("Failed to halt '{}' application".format(name)) from err
+
     def update_app(self, name, revision):
         with InstalledArtifactsTracker(self.config) as install_tracker:
             with UpdateStatusTracker(self.config) as update_tracker:
