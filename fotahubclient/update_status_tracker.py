@@ -59,8 +59,6 @@ class UpdateStatusTracker(object):
 
     def __lookup_update_status(self, artifact_name, artifact_kind):
         for update_status in self.update_statuses.update_statuses:
-            print('artifact_name = ' + update_status.artifact_name + ' <=> ' + artifact_name)
-            print('artifact_kind = ' + str(update_status.artifact_kind) + ' <=> = ' + str(artifact_kind))
             if update_status.artifact_name == artifact_name and update_status.artifact_kind == artifact_kind:
                 return update_status
         return None

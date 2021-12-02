@@ -119,7 +119,7 @@ class UpdateStatus(object):
             self.message = message
 
     def is_final(self, next_state):
-        return (self.state and self.state.is_final(next_state)) or not self.status
+        return (self.state is not None and self.state.is_final(next_state)) or not self.status
 
 class UpdateStatuses(object):
     def __init__(self, update_statuses=None):
