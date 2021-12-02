@@ -11,7 +11,7 @@ setup(
     version='0.1.0',
     author='FotaHub',
     author_email='contact@fotahub.com',
-    description='FotaHub Client enabling operating system or selected applications on Linux-based IoT edge devices to be over-the-air updated',
+    description='FotaHub Client enabling operating system or containerized applications on Linux-based IoT edge devices to be over-the-air updated and rolled back',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/fotahub/fotahub-device-sdk-yocto',

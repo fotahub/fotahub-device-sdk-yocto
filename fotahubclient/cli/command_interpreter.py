@@ -7,12 +7,14 @@ from fotahubclient.deployed_artifacts_tracker import DeployedArtifactsDescriber
 
 UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
 ROLL_BACK_OPERATING_SYSTEM_CMD = 'roll-back-operating-system'
-FINISH_OPERATING_SYSTEM_CHANGE_CMD = 'finish-operating-system-change'
+FINALIZE_OPERATING_SYSTEM_CHANGE_CMD = 'finalize-operating-system-change'
 DEPLOY_APPLICATIONS_CMD = 'deploy-applications'
+CONFIGURE_APPLICATION_CMD = 'configure-application'
 RUN_APPLICATION_CMD = 'run-application'
 HALT_APPLICATION_CMD = 'halt-application'
 UPDATE_APPLICATION_CMD = 'update-application'
 ROLL_BACK_APPLICATION_CMD = 'roll-back-application'
+DELETE_APPLICATION_CMD = 'delete-application'
 DESCRIBE_DEPLOYED_ARTIFACTS_CMD = 'describe-deployed-artifacts'
 DESCRIBE_UPDATE_STATUS_CMD = 'describe-update-status'
 
@@ -27,10 +29,12 @@ class CommandInterpreter(object):
             self.update_operating_system(args.revision, args.max_reboot_failures)
         elif args.command == ROLL_BACK_OPERATING_SYSTEM_CMD:
             self.roll_back_operating_system()
-        elif args.command == FINISH_OPERATING_SYSTEM_CHANGE_CMD:
-            self.finish_operating_system_change()
+        elif args.command == FINALIZE_OPERATING_SYSTEM_CHANGE_CMD:
+            self.finalize_operating_system_change()
         elif args.command == DEPLOY_APPLICATIONS_CMD:
             self.deploy_applications()
+        elif args.command == CONFIGURE_APPLICATION_CMD:
+            self.configure_application(args.name, args.run_mode)
         elif args.command == RUN_APPLICATION_CMD:
             self.run_application(args.name)
         elif args.command == HALT_APPLICATION_CMD:
@@ -39,6 +43,8 @@ class CommandInterpreter(object):
             self.update_application(args.name, args.revision)
         elif args.command == ROLL_BACK_APPLICATION_CMD:
             self.roll_back_application(args.name)
+        elif args.command == DELETE_APPLICATION_CMD:
+            self.delete_application(args.name)
         elif args.command == DESCRIBE_DEPLOYED_ARTIFACTS_CMD:
             self.describe_deployed_artifacts(args.artifact_names)
         elif args.command == DESCRIBE_UPDATE_STATUS_CMD:
@@ -56,7 +62,7 @@ class CommandInterpreter(object):
         manager = OSUpdateManager(self.config)
         manager.roll_back_os_update()
 
-    def finish_operating_system_change(self):
+    def finalize_operating_system_change(self):
         self.logger.debug('Finalizing OS update or rollback in case any such has just happened')
 
         manager = OSUpdateManager(self.config)
@@ -67,6 +73,12 @@ class CommandInterpreter(object):
         
         manager = AppManager(self.config)
         manager.deploy_and_run_apps()
+
+    def configure_application(self, name, run_mode):
+        self.logger.debug('Configuring ' + name + ' application')
+        
+        manager = AppManager(self.config)
+        manager.configure_app(name, run_mode)
 
     def run_application(self, name):
         self.logger.debug('Running ' + name + ' application')
@@ -91,6 +103,12 @@ class CommandInterpreter(object):
         
         manager = AppManager(self.config)
         manager.roll_back_app(name)
+
+    def delete_application(self, name):
+        self.logger.debug('Deleting ' + name + ' application')
+        
+        manager = AppManager(self.config)
+        manager.delete_app(name)
 
     def describe_deployed_artifacts(self, artifact_names=[]):
         self.logger.debug('Retrieving deployed artifacts')

@@ -1,6 +1,7 @@
 import os
 import shutil
 import logging
+from enum import Enum
 
 from fotahubclient.app_updater import AppUpdater
 from fotahubclient.json_document_models import LifecycleState, UpdateState
@@ -9,6 +10,13 @@ from fotahubclient.deployed_artifacts_tracker import DeployedArtifactsTracker
 from fotahubclient.update_status_tracker import UpdateStatusTracker
 import fotahubclient.common_constants as constants
 from fotahubclient.system_helper import touch
+
+class AppRunMode(Enum):
+    automatic = 'automatic'
+    manual = 'manual'
+
+    def __str__(self):
+        return self.value
 
 class AppManager(object):
     
@@ -45,13 +53,6 @@ class AppManager(object):
         self.logger.info("Applying '{}' application update to revision '{}'".format(name, revision))
         self.updater.checkout_app_revision(name, revision, self.__to_app_deploy_path(name))
 
-    def __delete_app(self, name):
-        if self.__is_app_deployed(name):
-            self.__halt_app(name)
-
-            self.logger.info("Deleting '{}' application".format(name))
-            shutil.rmtree(self.__to_app_deploy_path(name))
-
     def __run_app(self, name):
         if self.__is_app_deployed(name):
             self.logger.info("Running '{}' application".format(name))
@@ -62,8 +63,12 @@ class AppManager(object):
             self.logger.info("Halting '{}' application".format(name))
             self.runc.delete_container(name)
 
-    def configure_app(self, name, run_automatically=True):
-        self.__set_run_app_automatically(name, run_automatically)
+    def __delete_app(self, name):
+        if self.__is_app_deployed(name):
+            self.__halt_app(name)
+
+            self.logger.info("Deleting '{}' application".format(name))
+            shutil.rmtree(self.__to_app_deploy_path(name))
 
     def deploy_and_run_apps(self):
         with DeployedArtifactsTracker(self.config) as tracker:
@@ -86,6 +91,9 @@ class AppManager(object):
         
         if deploy_err:
             raise RuntimeError("Failed to deploy or run one or several applications (run 'fotahub describe-deployed-artifacts' to get more details)") 
+
+    def configure_app(self, name, run_mode=AppRunMode.automatic):
+        self.__set_run_app_automatically(name, run_mode == AppRunMode.automatic)
 
     def run_app(self, name):
         with DeployedArtifactsTracker(self.config) as deploy_tracker:

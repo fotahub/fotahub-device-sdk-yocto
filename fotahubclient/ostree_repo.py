@@ -61,7 +61,7 @@ class OSTreeRepo(object):
             result = self.ostree_repo.pull_with_options(
                 remote_name, opts, progress, None)
 
-            progress.finish()
+            progress.finalize()
             if not result:
                 raise OSTreeError("Unable to pull revision '{}' from '{}' branch at OSTree remote '{}'".format(revision, branch_name, remote_name))
         except GLib.Error as err:

@@ -1,16 +1,21 @@
 import argparse
 
+def set_option_parser_titles(parser, optionals_title='Options'):
+    parser._optionals.title = optionals_title
+
 def set_command_parser_titles(parser, positionals_title='Commands', optionals_title='Options'):
     parser._positionals.title = positionals_title
     parser._optionals.title = optionals_title
 
-class CommandHelpFormatter(argparse.HelpFormatter):
+class OptionHelpFormatter(argparse.HelpFormatter):
 
     def _format_usage(self, usage, actions, groups, prefix):
-        if not prefix:
-            return super(CommandHelpFormatter, self)._format_usage(usage, actions, groups, 'Usage: ')
+        if prefix is None:
+            return super(OptionHelpFormatter, self)._format_usage(usage, actions, groups, 'Usage: ')
         else:
-            return super(CommandHelpFormatter, self)._format_usage(usage, actions, groups, prefix)
+            return super(OptionHelpFormatter, self)._format_usage(usage, actions, groups, prefix)
+
+class CommandHelpFormatter(OptionHelpFormatter):
 
     def _format_args(self, action, default_metavar):
         if action.choices is not None:

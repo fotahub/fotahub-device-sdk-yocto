@@ -5,8 +5,9 @@ import os
 import fotahubclient.config_loader as config_loader
 import fotahubclient.cli.command_interpreter as commands
 import fotahubclient.os_updater as os_updater
-from fotahubclient.cli.command_help_formatter import CommandHelpFormatter
-from fotahubclient.cli.command_help_formatter import set_command_parser_titles
+from fotahubclient.cli.help_formatters import CommandHelpFormatter, OptionHelpFormatter
+from fotahubclient.cli.help_formatters import set_command_parser_titles
+from fotahubclient.app_manager import AppRunMode
 
 class CLI(object):
 
@@ -22,16 +23,21 @@ class CLI(object):
         cmd = cmds.add_parser(commands.UPDATE_OPERATING_SYSTEM_CMD, help='update operating system (involves a reboot)', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
         cmd.add_argument('-r', '--revision', required=True, help='operating system revision to update to')
-        cmd.add_argument('--max_reboot_failures', default=os_updater.MAX_REBOOT_FAILURES_DEFAULT, help='maximum number of reboot failures before automatically rolling back operating system update (optional, defaults to ' + str(os_updater.MAX_REBOOT_FAILURES_DEFAULT) + ')')
+        cmd.add_argument('--max-reboot-failures', default=os_updater.MAX_REBOOT_FAILURES_DEFAULT, help='maximum number of reboot failures before automatically rolling back operating system update (optional, defaults to ' + str(os_updater.MAX_REBOOT_FAILURES_DEFAULT) + ')')
         
         cmd = cmds.add_parser(commands.ROLL_BACK_OPERATING_SYSTEM_CMD, help='roll back operating system to previous revision', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
 
-        cmd = cmds.add_parser(commands.FINISH_OPERATING_SYSTEM_CHANGE_CMD, help='finalize an operating system update or rollback (after reboot)', formatter_class=CommandHelpFormatter)
+        cmd = cmds.add_parser(commands.FINALIZE_OPERATING_SYSTEM_CHANGE_CMD, help='finalize an operating system update or rollback (after reboot)', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
 
         cmd = cmds.add_parser(commands.DEPLOY_APPLICATIONS_CMD, help='deploy applications and run those configured to be run automatically', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
+
+        cmd = cmds.add_parser(commands.CONFIGURE_APPLICATION_CMD, help='configure an application', formatter_class=OptionHelpFormatter)
+        set_command_parser_titles(cmd)
+        cmd.add_argument('-n', '--name', required=True, help='name of application to configure')
+        cmd.add_argument('-m', '--run-mode', required=True, type=AppRunMode, choices=list(AppRunMode), help='mode in which to run application')
 
         cmd = cmds.add_parser(commands.RUN_APPLICATION_CMD, help='run an application', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
@@ -49,6 +55,10 @@ class CLI(object):
         cmd = cmds.add_parser(commands.ROLL_BACK_APPLICATION_CMD, help='roll back an application to previous revision', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)
         cmd.add_argument('-n', '--name', required=True, help='name of application to roll back')
+
+        cmd = cmds.add_parser(commands.DELETE_APPLICATION_CMD, help='delete an application', formatter_class=CommandHelpFormatter)
+        set_command_parser_titles(cmd)
+        cmd.add_argument('-n', '--name', required=True, help='name of application to delete')
 
         cmd = cmds.add_parser(commands.DESCRIBE_DEPLOYED_ARTIFACTS_CMD, help='retrieve deployed artifacts', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(cmd)

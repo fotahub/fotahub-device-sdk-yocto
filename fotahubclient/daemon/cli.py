@@ -3,8 +3,8 @@ import sys
 import os
 
 import fotahubclient.config_loader as config_loader
-from fotahubclient.daemon.option_help_formatter import OptionHelpFormatter
-from fotahubclient.daemon.option_help_formatter import set_option_parser_titles
+from fotahubclient.cli.help_formatters import OptionHelpFormatter
+from fotahubclient.cli.help_formatters import set_option_parser_titles
 
 class CLI(object):
 

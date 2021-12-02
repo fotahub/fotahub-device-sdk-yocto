@@ -5,22 +5,31 @@ import os
 from fotahubclient.json_encode_decode import PascalCaseJSONEncoder, PascalCasedObjectArrayJSONDecoder
 
 class ArtifactKind(Enum):
-    OperatingSystem = 1
-    Application = 2
-    Firmware = 3
+    OperatingSystem = 'OperatingSystem'
+    Application = 'Application'
+    Firmware = 'Firmware'
+
+    def __str__(self):
+        return self.value
 
 class LifecycleState(Enum):
-    available = 1
-    ready = 2
-    running = 3
-    finished = 4
+    available = 'Available'
+    ready = 'Ready'
+    running = 'Running'
+    finished = 'Finished'
 
+    def __str__(self):
+        return self.value
+        
 class UpdateState(Enum):
-    downloaded = 1
-    verified = 2
-    applied = 3
-    confirmed = 4 
-    rolled_back = 5
+    downloaded = 'Downloaded'
+    verified = 'Verified'
+    applied = 'Applied'
+    confirmed = 'Confirmed' 
+    rolled_back = 'RolledBack'
+
+    def __str__(self):
+        return self.value
 
     def is_final(self, next_state):
         return self == UpdateState.confirmed and next_state != UpdateState.rolled_back or self == UpdateState.rolled_back
