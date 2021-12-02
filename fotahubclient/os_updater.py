@@ -13,7 +13,7 @@ from fotahubclient.system_helper import reboot_system
 OSTREE_SYSTEM_REPOSITORY_PATH = '/ostree/repo'
 
 UBOOT_FLAG_APPLYING_OS_UPDATE = 'applying_os_update'
-UBOOT_FLAG_ROLLING_BACK_OS_UPDATE = 'rolling back_os_update'
+UBOOT_FLAG_ROLLING_BACK_OS_UPDATE = 'rolling_back_os_update'
 UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT = 'os_update_reboot_failure_credit'
 
 MAX_REBOOT_FAILURES_DEFAULT = 3
