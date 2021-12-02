@@ -8,7 +8,7 @@ from gi.repository import OSTree, GLib, Gio
 
 import fotahubclient.common_constants as constants
 from fotahubclient.ostree_repo import OSTreeRepo, OSTreeError
-from fotahubclient.json_document_models import ArtifactKind, InstalledArtifacts
+from fotahubclient.json_document_models import ArtifactKind, DeployedArtifacts
 from fotahubclient.system_helper import chowntree
 
 class AppUpdater(object):
@@ -39,11 +39,11 @@ class AppUpdater(object):
     def get_app_deploy_revision(self, name):
         return self.ostree_repo.resolve_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, name)
 
-    def get_app_rollback_revision(self, name, installed_artifacts_path):
-        if os.path.isfile(installed_artifacts_path) and os.path.getsize(installed_artifacts_path) > 0:
-            installed_artifacts = InstalledArtifacts.load_installed_artifacts(installed_artifacts_path)
-            rollback_versions = [installed_artifact.rollback_revision for installed_artifact in installed_artifacts.installed_artifacts 
-                if installed_artifact.name == name and installed_artifact.kind == ArtifactKind.Application]
+    def get_app_rollback_revision(self, name, deployed_artifacts_path):
+        if os.path.isfile(deployed_artifacts_path) and os.path.getsize(deployed_artifacts_path) > 0:
+            deployed_artifacts = DeployedArtifacts.load_deployed_artifacts(deployed_artifacts_path)
+            rollback_versions = [deployed_artifact.rollback_revision for deployed_artifact in deployed_artifacts.deployed_artifacts 
+                if deployed_artifact.name == name and deployed_artifact.kind == ArtifactKind.Application]
             return rollback_versions[0] if rollback_versions else None
         else:
             return None

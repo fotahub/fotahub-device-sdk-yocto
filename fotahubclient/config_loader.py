@@ -2,7 +2,7 @@ import os
 import configparser
 from configparser import ConfigParser
 
-INSTALLED_ARTIFACTS_PATH_DEFAULT = '/var/log/fotahub/installed-artifacts.json'
+DEPLOYED_ARTIFACTS_PATH_DEFAULT = '/var/log/fotahub/deployed-artifacts.json'
 UPDATE_STATUS_PATH_DEFAULT = '/var/log/fotahub/update-status.json'
 
 SYSTEM_CONFIG_PATH = '/etc/fotahub/fotahub.config'
@@ -15,7 +15,7 @@ class ConfigLoader(object):
         
         self.ostree_gpg_verify = False
 
-        self.installed_artifacts_path = None
+        self.deployed_artifacts_path = None
         self.update_status_path = None
         
         self.verbose = verbose
@@ -41,7 +41,7 @@ class ConfigLoader(object):
 
             self.ostree_gpg_verify = config.getboolean('General', 'OSTreeGPGVerify', fallback=False)
 
-            self.installed_artifacts_path = config.get('General', 'InstalledArtifactsPath', fallback=INSTALLED_ARTIFACTS_PATH_DEFAULT)
+            self.deployed_artifacts_path = config.get('General', 'DeployedArtifactsPath', fallback=DEPLOYED_ARTIFACTS_PATH_DEFAULT)
             self.update_status_path = config.get('General', 'UpdateStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
 
             if config.getboolean('General', 'Verbose', fallback=False):

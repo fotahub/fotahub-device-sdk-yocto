@@ -20,35 +20,35 @@ class UpdateState(Enum):
     verified = 2
     applied = 3
     confirmed = 4 
-    reverted = 5
+    rolled_back = 5
 
     def is_final(self, next_state):
-        return self == UpdateState.confirmed and next_state != UpdateState.reverted or self == UpdateState.reverted
+        return self == UpdateState.confirmed and next_state != UpdateState.rolled_back or self == UpdateState.rolled_back
 
-class InstalledArtifact(object):
-    def __init__(self, name, kind, install_revision, rollback_revision=None, lifecycle_state=LifecycleState.running, status=True, message=None):
+class DeployedArtifact(object):
+    def __init__(self, name, kind, deployed_revision, rollback_revision=None, lifecycle_state=LifecycleState.running, status=True, message=None):
         self.name = name
         self.kind = kind
-        self.install_revision = install_revision
+        self.deployed_revision = deployed_revision
         self.rollback_revision = rollback_revision
         self.lifecycle_state = lifecycle_state
         self.status = status
         self.message = message
 
-    def reset(self, install_revision, rollback_revision=None, lifecycle_state=LifecycleState.running):
-        self.install_revision = install_revision
+    def reinit(self, deployed_revision, rollback_revision=None, lifecycle_state=LifecycleState.running):
+        self.deployed_revision = deployed_revision
         if rollback_revision:
             self.rollback_revision = rollback_revision
         self.lifecycle_state = lifecycle_state
         self.status = True
         self.message = None
 
-    def amend_revision_info(self, install_revision, updating=True):
+    def amend_revision_info(self, deployed_revision, updating=True):
         if updating:
-            self.rollback_revision = self.install_revision
-            self.install_revision = install_revision
+            self.rollback_revision = self.deployed_revision
+            self.deployed_revision = deployed_revision
         else:
-            self.install_revision = install_revision
+            self.deployed_revision = deployed_revision
             self.rollback_revision = None
 
     def amend_lifecycle_info(self, lifecycle_state=None, status=True, message=None):
@@ -58,44 +58,44 @@ class InstalledArtifact(object):
         if not self.message:
             self.message = message
 
-class InstalledArtifacts(object):
-    def __init__(self, installed_artifacts=None):
-        self.installed_artifacts = installed_artifacts if installed_artifacts is not None else []
+class DeployedArtifacts(object):
+    def __init__(self, deployed_artifacts=None):
+        self.deployed_artifacts = deployed_artifacts if deployed_artifacts is not None else []
 
     def serialize(self):
         return json.dumps(self, indent=4, cls=PascalCaseJSONEncoder)
 
     @staticmethod
-    def load_installed_artifacts(path):
+    def load_deployed_artifacts(path):
         with open(path) as file:
-            return json.load(file, cls=InstalledArtifactsJSONDecoder)
+            return json.load(file, cls=DeployedArtifactsJSONDecoder)
 
     @staticmethod
-    def save_installed_artifacts(installed_artifacts, path):
+    def save_deployed_artifacts(deployed_artifacts, path):
         parent = os.path.dirname(path)
         if not os.path.isdir(parent):
             os.makedirs(parent, exist_ok=True)
 
         with open(path, 'w+', encoding='utf-8') as file:
-            json.dump(installed_artifacts, file, ensure_ascii=False, indent=4, cls=PascalCaseJSONEncoder)
+            json.dump(deployed_artifacts, file, ensure_ascii=False, indent=4, cls=PascalCaseJSONEncoder)
 
-class InstalledArtifactsJSONDecoder(PascalCasedObjectArrayJSONDecoder):
+class DeployedArtifactsJSONDecoder(PascalCasedObjectArrayJSONDecoder):
     def __init__(self):
-        super().__init__(InstalledArtifacts, InstalledArtifact, [ArtifactKind, LifecycleState])
+        super().__init__(DeployedArtifacts, DeployedArtifact, [ArtifactKind, LifecycleState])
 
 class UpdateStatus(object):
-    def __init__(self, artifact_name, artifact_kind, revision, install_timestamp, state=UpdateState.downloaded, status=True, message=None):
+    def __init__(self, artifact_name, artifact_kind, revision, deploy_timestamp, state=UpdateState.downloaded, status=True, message=None):
         self.artifact_name = artifact_name
         self.artifact_kind = artifact_kind
         self.revision = revision
-        self.install_timestamp = install_timestamp
+        self.deploy_timestamp = deploy_timestamp
         self.state = state
         self.status = status
         self.message = message
 
-    def reinit(self, revision, install_timestamp, state=UpdateState.downloaded, status=True, message=None):
+    def reinit(self, revision, deploy_timestamp, state=UpdateState.downloaded, status=True, message=None):
         self.revision = revision
-        self.install_timestamp = install_timestamp
+        self.deploy_timestamp = deploy_timestamp
         self.state = state
         self.status = status
         self.message = message

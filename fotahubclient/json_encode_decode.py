@@ -2,6 +2,12 @@ from enum import Enum
 from json import JSONEncoder, JSONDecoder
 import stringcase
 
+def snakecase_to_sentencecase(value):
+    return value.replace('_', ' ')
+
+def sentencecase_to_snakecase(value):
+    return value.replace(' ', '_')
+
 def none_to_empty_string_valued_dict(dict):
     return { k: '' if v is None else v for k, v in dict.items() }
 
@@ -12,16 +18,18 @@ def from_pascalcase_keyed_dict(dict, enum_types=[]):
     return { stringcase.snakecase(k): to_enum_literal(v, enum_types) for k, v in dict.items() }
 
 def to_enum_literal(value, enum_types):
-    for enum_type in enum_types:
-        if value in enum_type.__dict__['_member_names_']:
-            return enum_type.__dict__['_member_map_'][value]
+    if isinstance(value, str):
+        snakecased = sentencecase_to_snakecase(value)
+        for enum_type in enum_types:
+            if snakecased in enum_type.__dict__['_member_names_']:
+                return enum_type.__dict__['_member_map_'][snakecased]
     return value
 
 class PascalCaseJSONEncoder(JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, Enum):
-            return obj.name
+            return snakecase_to_sentencecase(obj.name)
         else:
             return to_pascalcase_keyed_dict(none_to_empty_string_valued_dict(obj.__dict__))
 

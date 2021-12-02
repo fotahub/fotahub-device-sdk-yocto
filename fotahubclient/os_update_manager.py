@@ -7,7 +7,7 @@ from fotahubclient.system_helper import run_hook_command
 from fotahubclient.update_status_tracker import UpdateStatusTracker
 from fotahubclient.json_document_models import UpdateState
 
-class OSUpdateInitiator(object):
+class OSUpdateManager(object):
 
     def __init__(self, config):
         self.logger = logging.getLogger()
@@ -31,33 +31,21 @@ class OSUpdateInitiator(object):
                 tracker.record_os_update_status(revision=revision, status=False, message=str(err))
                 raise err
 
-class OSUpdateReverter(object):
-
-    def __init__(self, config):
-        self.logger = logging.getLogger()
-        self.config = config
-
-    def revert_os_update(self):
+    def roll_back_os_update(self):
         with UpdateStatusTracker(self.config) as tracker:
             try:
                 updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
-                tracker.record_os_update_status(message='Update reverted due to application-level or external request', save_instantly=True)
-                updater.revert_os_update()
+                tracker.record_os_update_status(message='Update roll_backed due to application-level or external request', save_instantly=True)
+                updater.roll_back_os_update()
             except Exception as err:
                 tracker.record_os_update_status(status=False, message=str(err))
                 raise err
-
-class OSUpdateFinalizer(object):
-
-    def __init__(self, config):
-        self.logger = logging.getLogger()
-        self.config = config
 
     def finalize_os_update(self):
         with UpdateStatusTracker(self.config) as tracker:
             try:
                 updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
-                self.logger.info("Booted OS revision: {}".format(updater.get_installed_os_revision()))
+                self.logger.info("Booted OS revision: {}".format(updater.get_deployed_os_revision()))
                 
                 if updater.is_applying_os_update():
                     tracker.record_os_update_status(state=UpdateState.applied)
@@ -68,10 +56,10 @@ class OSUpdateFinalizer(object):
                         tracker.record_os_update_status(message='OS update successfully completed', state=UpdateState.confirmed)
                     else:
                         tracker.record_os_update_status(message=message, save_instantly=True)
-                        updater.revert_os_update()
+                        updater.roll_back_os_update()
                 
-                elif updater.is_reverting_os_update():
-                    tracker.record_os_update_status(state=UpdateState.reverted)
+                elif updater.is_rolling_back_os_update():
+                    tracker.record_os_update_status(state=UpdateState.rolled_back)
                     updater.discard_os_update()
                 
                 else:

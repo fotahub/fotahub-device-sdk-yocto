@@ -5,16 +5,16 @@ import traceback
 from fotahubclient.daemon.cli import CLI
 from fotahubclient.config_loader import ConfigLoader
 import fotahubclient.common_constants as constants
-from fotahubclient.os_update_agents import OSUpdateFinalizer
+from fotahubclient.os_update_manager import OSUpdateManager
 from fotahubclient.app_manager import AppManager
 from fotahubclient.system_helper import join_exception_messages
 
 def run(config):
     logging.getLogger().debug('Finalizing OS update or rollback in case any such has just happened')
-    finalizer = OSUpdateFinalizer(config)
-    finalizer.finalize_os_update()
+    manager = OSUpdateManager(config)
+    manager.finalize_os_update()
 
-    logging.getLogger().debug('Deploying applications and running those configured to do so automatically')
+    logging.getLogger().debug('Deploying applications and running those configured to be run automatically')
     manager = AppManager(config)
     manager.deploy_and_run_apps()
 

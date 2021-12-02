@@ -5,7 +5,7 @@ import logging
 from fotahubclient.app_updater import AppUpdater
 from fotahubclient.json_document_models import LifecycleState, UpdateState
 from fotahubclient.runc_operator import RunCOperator
-from fotahubclient.installed_artifacts_tracker import InstalledArtifactsTracker
+from fotahubclient.deployed_artifacts_tracker import DeployedArtifactsTracker
 from fotahubclient.update_status_tracker import UpdateStatusTracker
 import fotahubclient.common_constants as constants
 from fotahubclient.system_helper import touch
@@ -66,7 +66,7 @@ class AppManager(object):
         self.__set_run_app_automatically(name, run_automatically)
 
     def deploy_and_run_apps(self):
-        with InstalledArtifactsTracker(self.config) as tracker:
+        with DeployedArtifactsTracker(self.config) as tracker:
             names = self.updater.list_app_names()
 
             deploy_err = False
@@ -85,33 +85,33 @@ class AppManager(object):
                     deploy_err = True
         
         if deploy_err:
-            raise RuntimeError("Failed to deploy or run one or several applications (run 'fotahub describe-installed-artifacts' to get more details)") 
+            raise RuntimeError("Failed to deploy or run one or several applications (run 'fotahub describe-deployed-artifacts' to get more details)") 
 
     def run_app(self, name):
-        with InstalledArtifactsTracker(self.config) as install_tracker:
+        with DeployedArtifactsTracker(self.config) as deploy_tracker:
             try:
                 self.__run_app(name)
-                install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
+                deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
             except Exception as err:
-                install_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
+                deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                 raise RuntimeError("Failed to run '{}' application".format(name)) from err
 
     def halt_app(self, name):
-        with InstalledArtifactsTracker(self.config) as install_tracker:
+        with DeployedArtifactsTracker(self.config) as deploy_tracker:
             try:
                 self.__halt_app(name)
-                install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
+                deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
             except Exception as err:
-                install_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
+                deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                 raise RuntimeError("Failed to halt '{}' application".format(name)) from err
 
     def update_app(self, name, revision):
-        with InstalledArtifactsTracker(self.config) as install_tracker:
+        with DeployedArtifactsTracker(self.config) as deploy_tracker:
             with UpdateStatusTracker(self.config) as update_tracker:
                 self.logger.info("Updating '{}' application to revision '{}'".format(name, revision))
                 try:
                     self.__halt_app(name)
-                    install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
+                    deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
 
                     self.updater.pull_app_update(name, revision)
                     update_tracker.record_app_update_status(name, state=UpdateState.downloaded, revision=revision)
@@ -120,47 +120,47 @@ class AppManager(object):
                     update_tracker.record_app_update_status(name, state=UpdateState.verified)
                     
                     self.__apply_app_update(name, revision)
-                    install_tracker.record_app_install_revision_change(name, revision, updating=True)
+                    deploy_tracker.record_app_deployed_revision_change(name, revision, updating=True)
                     update_tracker.record_app_update_status(name, state=UpdateState.applied)
 
                     if self.__is_run_app_automatically(name):
                         self.__run_app(name)
-                        install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
+                        deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
 
-                    # TODO Implement app self testing and revert app if the same fails 
+                    # TODO Implement app self testing and roll back app if the same fails 
                     update_tracker.record_app_update_status(name, state=UpdateState.confirmed, message='Application update successfully completed')
                 except Exception as err:
-                    install_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
+                    deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     update_tracker.record_app_update_status(name, revision=revision, status=False, message=str(err))
                     raise RuntimeError("Failed to update '{}' application".format(name)) from err
 
-    def revert_app(self, name):
-        revision = self.updater.get_app_rollback_revision(name, self.config.installed_artifacts_path)
+    def roll_back_app(self, name):
+        revision = self.updater.get_app_rollback_revision(name, self.config.deployed_artifacts_path)
         if not revision:
-             raise RuntimeError("Cannot revert update for '{}' application before any such has been deployed".format(name))
+             raise RuntimeError("Cannot roll back update for '{}' application before any such has been deployed".format(name))
         
-        with InstalledArtifactsTracker(self.config) as install_tracker:
+        with DeployedArtifactsTracker(self.config) as deploy_tracker:
             with UpdateStatusTracker(self.config) as update_tracker:
-                self.logger.info("Reverting '{}' application to revision '{}'".format(name, revision))
+                self.logger.info("Rolling back '{}' application to revision '{}'".format(name, revision))
                 try:
                     self.__halt_app(name)
-                    install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
+                    deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
 
                     self.__deploy_app_revision(name, revision)
-                    install_tracker.record_app_install_revision_change(name, revision, updating=False)
+                    deploy_tracker.record_app_deployed_revision_change(name, revision, updating=False)
 
                     if self.__is_run_app_automatically(name):
                         self.__run_app(name)
-                        install_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
+                        deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
 
-                    update_tracker.record_app_update_status(name, state=UpdateState.reverted, message='Update reverted due to application-level or external request')
+                    update_tracker.record_app_update_status(name, state=UpdateState.rolled_back, message='Update roll backed due to application-level or external request')
                 except Exception as err:
-                    install_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
+                    deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     update_tracker.record_app_update_status(name, revision=revision, status=False, message=str(err))
-                    raise RuntimeError("Failed to revert '{}' application".format(name)) from err
+                    raise RuntimeError("Failed to roll back '{}' application".format(name)) from err
 
     def delete_app(self, name):
-        with InstalledArtifactsTracker(self.config) as tracker:
+        with DeployedArtifactsTracker(self.config) as tracker:
             try:
                 self.__delete_app(name)
                 tracker.erase_app(name)

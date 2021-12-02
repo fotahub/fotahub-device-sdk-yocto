@@ -1,19 +1,19 @@
 import logging
 
-from fotahubclient.os_update_agents import OSUpdateInitiator, OSUpdateReverter, OSUpdateFinalizer
+from fotahubclient.os_update_manager import OSUpdateManager
 from fotahubclient.app_manager import AppManager
 from fotahubclient.update_status_tracker import UpdateStatusDescriber
-from fotahubclient.installed_artifacts_tracker import InstalledArtifactsDescriber
+from fotahubclient.deployed_artifacts_tracker import DeployedArtifactsDescriber
 
 UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
-REVERT_OPERATING_SYSTEM_CMD = 'revert-operating-system'
+ROLL_BACK_OPERATING_SYSTEM_CMD = 'roll-back-operating-system'
 FINISH_OPERATING_SYSTEM_CHANGE_CMD = 'finish-operating-system-change'
 DEPLOY_APPLICATIONS_CMD = 'deploy-applications'
 RUN_APPLICATION_CMD = 'run-application'
 HALT_APPLICATION_CMD = 'halt-application'
 UPDATE_APPLICATION_CMD = 'update-application'
-REVERT_APPLICATION_CMD = 'revert-application'
-DESCRIBE_INSTALLED_ARTIFACTS_CMD = 'describe-installed-artifacts'
+ROLL_BACK_APPLICATION_CMD = 'roll-back-application'
+DESCRIBE_DEPLOYED_ARTIFACTS_CMD = 'describe-deployed-artifacts'
 DESCRIBE_UPDATE_STATUS_CMD = 'describe-update-status'
 
 class CommandInterpreter(object):
@@ -25,8 +25,8 @@ class CommandInterpreter(object):
     def run(self, args):
         if args.command == UPDATE_OPERATING_SYSTEM_CMD:
             self.update_operating_system(args.revision, args.max_reboot_failures)
-        elif args.command == REVERT_OPERATING_SYSTEM_CMD:
-            self.revert_operating_system()
+        elif args.command == ROLL_BACK_OPERATING_SYSTEM_CMD:
+            self.roll_back_operating_system()
         elif args.command == FINISH_OPERATING_SYSTEM_CHANGE_CMD:
             self.finish_operating_system_change()
         elif args.command == DEPLOY_APPLICATIONS_CMD:
@@ -37,33 +37,33 @@ class CommandInterpreter(object):
             self.halt_application(args.name)
         elif args.command == UPDATE_APPLICATION_CMD:
             self.update_application(args.name, args.revision)
-        elif args.command == REVERT_APPLICATION_CMD:
-            self.revert_application(args.name)
-        elif args.command == DESCRIBE_INSTALLED_ARTIFACTS_CMD:
-            self.describe_installed_artifacts(args.artifact_names)
+        elif args.command == ROLL_BACK_APPLICATION_CMD:
+            self.roll_back_application(args.name)
+        elif args.command == DESCRIBE_DEPLOYED_ARTIFACTS_CMD:
+            self.describe_deployed_artifacts(args.artifact_names)
         elif args.command == DESCRIBE_UPDATE_STATUS_CMD:
             self.describe_update_status(args.artifact_names)
 
     def update_operating_system(self, revision, max_reboot_failures):
         self.logger.debug('Initiating OS update to revision ' + revision)
 
-        initiator = OSUpdateInitiator(self.config)
-        initiator.initiate_os_update(revision, max_reboot_failures)
+        manager = OSUpdateManager(self.config)
+        manager.initiate_os_update(revision, max_reboot_failures)
 
-    def revert_operating_system(self):
-        self.logger.debug('Reverting OS to previous revision')
+    def roll_back_operating_system(self):
+        self.logger.debug('Rolling back OS to previous revision')
 
-        reverter = OSUpdateReverter(self.config)
-        reverter.revert_os_update()
+        manager = OSUpdateManager(self.config)
+        manager.roll_back_os_update()
 
     def finish_operating_system_change(self):
         self.logger.debug('Finalizing OS update or rollback in case any such has just happened')
 
-        finalizer = OSUpdateFinalizer(self.config)
-        finalizer.finalize_os_update()
+        manager = OSUpdateManager(self.config)
+        manager.finalize_os_update()
 
     def deploy_applications(self):
-        self.logger.debug('Deploying applications and running those configured to do so automatically')
+        self.logger.debug('Deploying applications and running those configured to be run automatically')
         
         manager = AppManager(self.config)
         manager.deploy_and_run_apps()
@@ -86,17 +86,17 @@ class CommandInterpreter(object):
         manager = AppManager(self.config)
         manager.update_app(name, revision)
 
-    def revert_application(self, name):
-        self.logger.debug('Reverting ' + name + ' application to previous revision ')
+    def roll_back_application(self, name):
+        self.logger.debug('Rolling back ' + name + ' application to previous revision ')
         
         manager = AppManager(self.config)
-        manager.revert_app(name)
+        manager.roll_back_app(name)
 
-    def describe_installed_artifacts(self, artifact_names=[]):
-        self.logger.debug('Retrieving installed artifacts')
+    def describe_deployed_artifacts(self, artifact_names=[]):
+        self.logger.debug('Retrieving deployed artifacts')
 
-        describer = InstalledArtifactsDescriber(self.config)
-        print(describer.describe_installed_artifacts(artifact_names))
+        describer = DeployedArtifactsDescriber(self.config)
+        print(describer.describe_deployed_artifacts(artifact_names))
 
     def describe_update_status(self, artifact_names=[]):
         self.logger.debug('Retrieving update status')

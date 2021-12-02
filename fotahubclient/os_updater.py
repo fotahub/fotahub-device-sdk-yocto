@@ -13,7 +13,7 @@ from fotahubclient.system_helper import reboot_system
 OSTREE_SYSTEM_REPOSITORY_PATH = '/ostree/repo'
 
 UBOOT_FLAG_APPLYING_OS_UPDATE = 'applying_os_update'
-UBOOT_FLAG_REVERTING_OS_UPDATE = 'reverting_os_update'
+UBOOT_FLAG_ROLLING_BACK_OS_UPDATE = 'rolling back_os_update'
 UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT = 'os_update_reboot_failure_credit'
 
 MAX_REBOOT_FAILURES_DEFAULT = 3
@@ -46,7 +46,7 @@ class OSUpdater(object):
         except GLib.Error as err:
             raise OSTreeError('Failed to open OS OSTree repo') from err
 
-    def get_installed_os_revision(self):
+    def get_deployed_os_revision(self):
         deploy = self.sysroot.get_booted_deployment()
         return deploy.get_csum() if deploy is not None else None
 
@@ -93,9 +93,9 @@ class OSUpdater(object):
         self.logger.info("Applying OS update to revision {}".format(revision))
         if self.is_applying_os_update():
             raise OSTreeError("Cannot apply any new OS update when the some other OS update is still about to be applied")
-        if self.is_reverting_os_update():
-            raise OSTreeError("Cannot apply any new OS update when the some other OS update is still about to be reverted")
-        if revision == self.get_installed_os_revision():
+        if self.is_rolling_back_os_update():
+            raise OSTreeError("Cannot apply any new OS update when the some other OS update is still about to rolled back")
+        if revision == self.get_deployed_os_revision():
             raise OSTreeError("Cannot update OS towards the same revision that is already in use")
             
         self.__stage_os_update(revision)
@@ -116,26 +116,26 @@ class OSUpdater(object):
         self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE)
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
 
-    def revert_os_update(self):
-        self.logger.info("Reverting latest OS update")
+    def roll_back_os_update(self):
+        self.logger.info("Rolling back latest OS update")
         if not self.has_rollback_os_revision():
-            raise OSTreeError("Cannot revert OS update before any such has been installed")
+            raise OSTreeError("Cannot roll_back OS update before any such has been deployed")
 
         self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE)
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
-        self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE, '1')
+        self.uboot.set_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE, '1')
 
         reboot_system()
 
-    def is_reverting_os_update(self):
-        return self.uboot.isset_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
+    def is_rolling_back_os_update(self):
+        return self.uboot.isset_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE)
 
     def discard_os_update(self):
-        self.logger.info("Discarding reverted OS update")
-        if not self.is_reverting_os_update():
-            raise OSTreeError("Cannot discard OS update before any such has been reverted")
+        self.logger.info("Discarding roll_backed OS update")
+        if not self.is_rolling_back_os_update():
+            raise OSTreeError("Cannot discard OS update before any such has been roll_backed")
         
-        self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
+        self.uboot.set_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE)
 
         try:
             if self.has_pending_os_revision():                    
@@ -143,4 +143,4 @@ class OSUpdater(object):
                 # TODO Reimplement this behavior using OSTree API (see https://github.com/ostreedev/ostree/blob/8cb5d920c4b89d17c196f30f2c59fcbd4c762a17/src/ostree/ot-admin-builtin-undeploy.c#L59)
                 subprocess.run(["ostree", "admin", "undeploy", "0"], check=True)
         except subprocess.CalledProcessError as err:
-            raise OSTreeError("Failed to discard reverted OS update") from err
+            raise OSTreeError("Failed to discard roll_backed OS update") from err
