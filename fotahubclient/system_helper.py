@@ -11,7 +11,7 @@ def join_exception_messages(err, message=''):
         return message
 
 def run_hook_command(title, command, args=[]):
-    if command is not None:
+    if command:
         logging.getLogger().info("Running {}".format(title))
 
         command = shlex.split(command)

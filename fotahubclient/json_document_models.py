@@ -37,7 +37,7 @@ class InstalledArtifact(object):
 
     def reset(self, install_revision, rollback_revision=None, lifecycle_state=LifecycleState.running):
         self.install_revision = install_revision
-        if rollback_revision is not None:
+        if rollback_revision:
             self.rollback_revision = rollback_revision
         self.lifecycle_state = lifecycle_state
         self.status = True
@@ -55,7 +55,7 @@ class InstalledArtifact(object):
         if lifecycle_state is not None:
             self.lifecycle_state = lifecycle_state
         self.status = status
-        if self.message is None:
+        if not self.message:
             self.message = message
 
 class InstalledArtifacts(object):
@@ -101,12 +101,12 @@ class UpdateStatus(object):
         self.message = message
 
     def amend(self, revision, state, status=True, message=None):
-        if revision is not None:
+        if not self.revision:
             self.revision = revision
         if state is not None:
             self.state = state
         self.status = status
-        if self.message is None:
+        if not self.message:
             self.message = message
 
     def is_final(self, next_state):

@@ -38,7 +38,7 @@ class OSTreeRepo(object):
         return refs
 
     def resolve_ostree_revision(self, remote_name, ref):
-        [_, revision] = self.ostree_repo.resolve_rev(remote_name + ':' + ref if remote_name is not None else ref, False)
+        [_, revision] = self.ostree_repo.resolve_rev(remote_name + ':' + ref if remote_name else ref, False)
         return revision
 
     def pull_ostree_revision(self, remote_name, branch_name, revision, depth):

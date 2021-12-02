@@ -3,7 +3,7 @@ from json import JSONEncoder, JSONDecoder
 import stringcase
 
 def none_to_empty_string_valued_dict(dict):
-    return { k: '' if v is None else v for k, v in dict.items() }
+    return { k: '' if not v else v for k, v in dict.items() }
 
 def to_pascalcase_keyed_dict(dict):
     return { stringcase.pascalcase(k): v for k, v in dict.items() }

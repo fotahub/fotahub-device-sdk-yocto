@@ -7,7 +7,7 @@ def set_command_parser_titles(parser, positionals_title='Commands', optionals_ti
 class CommandHelpFormatter(argparse.HelpFormatter):
 
     def _format_usage(self, usage, actions, groups, prefix):
-        if prefix is None:
+        if not prefix:
             return super(CommandHelpFormatter, self)._format_usage(usage, actions, groups, 'Usage: ')
         else:
             return super(CommandHelpFormatter, self)._format_usage(usage, actions, groups, prefix)

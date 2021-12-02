@@ -65,7 +65,7 @@ class RunCOperator(object):
     def delete_container(self, container_id):
         self.stop_container(container_id)
 
-        if self.get_container_state(container_id) is None:
+        if not self.get_container_state(container_id):
             self.logger.debug("Ignoring request to delete '{}' container as no such exists yet or anymore".format(container_id))
             return
 

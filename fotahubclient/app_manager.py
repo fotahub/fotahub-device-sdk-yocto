@@ -136,7 +136,7 @@ class AppManager(object):
 
     def revert_app(self, name):
         revision = self.updater.get_app_rollback_revision(name, self.config.installed_artifacts_path)
-        if revision is None:
+        if not revision:
              raise RuntimeError("Cannot revert update for '{}' application before any such has been deployed".format(name))
         
         with InstalledArtifactsTracker(self.config) as install_tracker:

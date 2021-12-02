@@ -51,14 +51,14 @@ class OSUpdater(object):
         return deploy.get_csum() if deploy is not None else None
 
     def has_pending_os_revision(self):
-        return self.get_pending_os_revision() is not None
+        return self.get_pending_os_revision()
 
     def get_pending_os_revision(self):
         [pending, _] = self.sysroot.query_deployments_for(None)
         return pending.get_csum() if pending is not None else None
         
     def has_rollback_os_revision(self):
-        return self.get_rollback_os_revision() is not None
+        return self.get_rollback_os_revision()
 
     def get_rollback_os_revision(self):
         [_, rollback] = self.sysroot.query_deployments_for(None)

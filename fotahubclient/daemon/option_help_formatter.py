@@ -6,7 +6,7 @@ def set_option_parser_titles(parser, optionals_title='Options'):
 class OptionHelpFormatter(argparse.HelpFormatter):
 
     def _format_usage(self, usage, actions, groups, prefix):
-        if prefix is None:
+        if not prefix:
             return super(OptionHelpFormatter, self)._format_usage(usage, actions, groups, 'Usage: ')
         else:
             return super(OptionHelpFormatter, self)._format_usage(usage, actions, groups, prefix)
