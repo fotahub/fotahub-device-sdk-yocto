@@ -30,7 +30,7 @@ class UBootOperator(object):
     def isset_uboot_env_var(self, name):
         try:
             cmd = [UBOOT_PRINTENV_TOOL]
-            process = subprocess.run(cmd, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            process = subprocess.run(cmd, text=True, capture_output=True, check=True)
             return bool(re.search(r'^{}='.format(name), process.stdout, re.MULTILINE))
-        except subprocess.CalledProcessError as err:
-          return False
+        except subprocess.CalledProcessError:
+            return False

@@ -3,6 +3,8 @@ import subprocess
 import json
 from enum import Enum
 
+from fotahubclient.system_helper import get_process_text_outcome
+
 CONTAINER_LOG_OUT_FILE_NAME = 'log.out'
 CONTAINER_LOG_ERR_FILE_NAME = 'log.err'
 
@@ -28,10 +30,10 @@ class RunCOperator(object):
         self.logger = logging.getLogger()
 
     def get_container_state(self, container_id):
-        process = subprocess.run(["runc", "state", container_id], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        process = subprocess.run(["runc", "state", container_id], text=True, capture_output=True, check=False)
         if process.returncode != 0:
             return None
-        return ContainerState.from_string(json.loads(process.stdout.decode("utf-8"))['status'])
+        return ContainerState.from_string(json.loads(process.stdout)['status'])
 
     def run_container(self, container_id, bundle_path):
         container_state = self.get_container_state(container_id)
@@ -44,9 +46,9 @@ class RunCOperator(object):
         self.logger.debug("Creating and running '{}' container as per '{}' bundle".format(container_id, bundle_path))
         with open('{}/{}'.format(bundle_path, CONTAINER_LOG_OUT_FILE_NAME), "w") as out_file:
             with open('{}/{}'.format(bundle_path, CONTAINER_LOG_ERR_FILE_NAME), "w") as err_file:
-                process = subprocess.run(["runc", "run", "--detach", "-b", bundle_path, container_id], stdout=out_file, stderr=err_file, check=False)
+                process = subprocess.run(["runc", "run", "--detach", "-b", bundle_path, container_id], text=True, stdout=out_file, stderr=err_file, check=False)
                 if process.returncode != 0:
-                    raise RunCError("Failed to create and run '{}' container: {}".format(container_id, process.stderr.decode("utf-8")))
+                    raise RunCError("Failed to create and run '{}' container: {}".format(container_id, err_file.read()))
 
     def stop_container(self, container_id):
         if self.get_container_state(container_id) != ContainerState.running:
@@ -54,9 +56,9 @@ class RunCOperator(object):
             return
 
         self.logger.debug("Stopping '{}' container".format(container_id))
-        process = subprocess.run(["runc", "kill", container_id, "KILL"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        process = subprocess.run(["runc", "kill", container_id, "KILL"], text=True, capture_output=True, check=False)
         if process.returncode != 0:
-            raise RunCError("Failed to stop '{}' container: {}".format(container_id, process.stderr.decode("utf-8")))
+            raise RunCError("Failed to stop '{}' container: {}".format(container_id, get_process_text_outcome(process)))
 
         while self.get_container_state(container_id) == ContainerState.running:
             # Wait until container has been effectively stopped
@@ -70,6 +72,6 @@ class RunCOperator(object):
             return
 
         self.logger.debug("Deleting '{}' container".format(container_id))
-        process = subprocess.run(["runc", "delete", container_id], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        process = subprocess.run(["runc", "delete", container_id], text=True, capture_output=True, check=False)
         if process.returncode != 0:
-            raise RunCError("Failed to delete '{}' container: {}".format(container_id, process.stderr.decode("utf-8")))
+            raise RunCError("Failed to delete '{}' container: {}".format(container_id, get_process_text_outcome(process)))

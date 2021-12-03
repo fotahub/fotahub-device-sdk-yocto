@@ -19,23 +19,25 @@ def run_hook_command(title, command, args=[]):
         if command[0] == 'sh' or command[0] == 'bash':
             args = [command[0]] + args
         
-        process = subprocess.run(command + args, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        process = subprocess.run(command + args, text=True, capture_output=True, check=False)
+        outcome = get_process_text_outcome(process)
+        message = title + " {}" + (': ' + outcome if outcome else '').format('succeeded' if process.returncode == 0 else 'failed')
         if process.returncode == 0:
-            message = title + ' succeeded'
-            if process.stdout:
-                message += ': ' + process.stdout.strip()
             logging.getLogger().info(message)
             return [True, message]
         else:
-            message = title + ' failed'
-            if process.stderr:
-                message += ': ' + process.stderr.strip()
-            elif process.stdout:
-                message += ': ' + process.stdout.strip()
             logging.getLogger().error(message)
             return [False, message]
     else:
         return [True, None]
+
+def get_process_text_outcome(process):
+    if process.stderr is not None and process.stderr.strip():
+        return process.stderr.strip()
+    elif process.stdout is not None and process.stdout.strip():
+        return process.stdout.strip()
+    else:
+        return "Exit code {}".format(process.returncode) if process.returncode != 0 else ''
 
 def reboot_system():
     logging.getLogger().info("Rebooting system")

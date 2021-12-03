@@ -6,9 +6,7 @@
   <remote fetch="https://git.yoctoproject.org/git" name="yocto"/>
   <remote fetch="https://github.com/openembedded" name="oe"/>
   <remote fetch="https://github.com/advancedtelematic" name="advancedtelematic"/>
-  <remote fetch="https://github.com/FullMetalUpdate" name="fullmetalupdate"/>
   <remote fetch="https://github.com/fotahub" name="fotahub"/>
-  <remote fetch="https://github.com/meta-qt5" name="qt"/>
 
   <project remote="yocto" revision="rocko" name="poky" path="poky"/>
   <project remote="oe" revision="rocko" name="meta-openembedded" path="meta-openembedded"/>
@@ -16,9 +14,6 @@
   <project remote="yocto" revision="rocko" name="meta-raspberrypi" path="meta-raspberrypi"/>
   
   <project remote="advancedtelematic" revision="rocko" name="meta-updater" path="meta-updater"/>
-  <project remote="fullmetalupdate" revision="rocko" name="meta-fullmetalupdate-extra" path="meta-fullmetalupdate-extra"/>
   <project remote="fotahub" revision="rocko" name="meta-fotahub" path="meta-fotahub"/>
-
-  <project remote="qt" revision="rocko" name="meta-qt5" path="meta-qt5"/>
 
 </manifest>
