@@ -11,6 +11,7 @@ FINALIZE_OPERATING_SYSTEM_CHANGE_CMD = 'finalize-operating-system-change'
 DEPLOY_APPLICATIONS_CMD = 'deploy-applications'
 CONFIGURE_APPLICATION_CMD = 'configure-application'
 RUN_APPLICATION_CMD = 'run-application'
+READ_APPLICATION_LOGS_CMD = 'read-application-logs'
 HALT_APPLICATION_CMD = 'halt-application'
 UPDATE_APPLICATION_CMD = 'update-application'
 ROLL_BACK_APPLICATION_CMD = 'roll-back-application'
@@ -37,6 +38,8 @@ class CommandInterpreter(object):
             self.configure_application(args.name, args.run_mode)
         elif args.command == RUN_APPLICATION_CMD:
             self.run_application(args.name)
+        elif args.command == READ_APPLICATION_LOGS_CMD:
+            self.read_application_logs(args.name, args.max_lines)
         elif args.command == HALT_APPLICATION_CMD:
             self.halt_application(args.name)
         elif args.command == UPDATE_APPLICATION_CMD:
@@ -85,6 +88,12 @@ class CommandInterpreter(object):
         
         manager = AppManager(self.config)
         manager.run_app(name)
+
+    def read_application_logs(self, name, max_lines):
+        self.logger.debug('Reading ' + name + ' application logs')
+        
+        manager = AppManager(self.config)
+        manager.read_app_logs(name, max_lines)
 
     def halt_application(self, name):
         self.logger.debug('Halting ' + name + ' application')

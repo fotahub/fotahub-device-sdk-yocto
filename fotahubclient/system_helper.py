@@ -19,7 +19,7 @@ def run_hook_command(title, command, args=[]):
         if command[0] == 'sh' or command[0] == 'bash':
             args = [command[0]] + args
         
-        process = subprocess.run(command + args, text=True, capture_output=True, check=False)
+        process = subprocess.run(command + args, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         outcome = get_process_text_outcome(process)
         message = title + " {}" + (': ' + outcome if outcome else '').format('succeeded' if process.returncode == 0 else 'failed')
         if process.returncode == 0:
@@ -38,6 +38,25 @@ def get_process_text_outcome(process):
         return process.stdout.strip()
     else:
         return "Exit code {}".format(process.returncode) if process.returncode != 0 else ''
+
+def read_last_lines(path, max_lines):
+    with open(path, "rb") as file:
+        # Go to the end of the file before the last break-line
+        file.seek(-2, os.SEEK_END) 
+        
+        # Move back specified number of lines
+        for _ in range(max_lines):
+            # Keep moving backward until the next break-line
+            while file.read(1) != b'\n':
+                file.seek(-2, os.SEEK_CUR)
+            file.seek(-2, os.SEEK_CUR)
+            
+            # Keep going unless having returned to the beginning of the file
+            if file.tell() == 0:
+                break
+
+        # Read file content from current position on and convert result into text
+        return file.read().decode()
 
 def reboot_system():
     logging.getLogger().info("Rebooting system")

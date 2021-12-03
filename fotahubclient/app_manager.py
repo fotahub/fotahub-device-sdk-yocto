@@ -56,7 +56,12 @@ class AppManager(object):
     def __run_app(self, name):
         if self.__is_app_deployed(name):
             self.logger.info("Running '{}' application".format(name))
-            self.runc.run_container(name, self.__to_app_deploy_path(name))
+            return self.runc.run_container(name, self.__to_app_deploy_path(name))
+
+    def __read_app_logs(self, name, max_lines):
+        if self.__is_app_deployed(name):
+            self.logger.info("Reading '{}' application logs".format(name))
+            self.runc.read_container_logs(self.__to_app_deploy_path(name), max_lines)
 
     def __halt_app(self, name):
         if self.__is_app_deployed(name):
@@ -83,8 +88,8 @@ class AppManager(object):
                     tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
 
                     if self.__is_run_app_automatically(name):
-                        self.__run_app(name)
-                        tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
+                        [lifecycle_state, message] = self.__run_app(name)
+                        tracker.record_app_lifecycle_status_change(name, lifecycle_state=lifecycle_state, message=message)
                 except Exception as err:
                     tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     deploy_err = True
@@ -98,11 +103,14 @@ class AppManager(object):
     def run_app(self, name):
         with DeployedArtifactsTracker(self.config) as deploy_tracker:
             try:
-                self.__run_app(name)
-                deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
+                [lifecycle_state, message] = self.__run_app(name)
+                deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=lifecycle_state, message=message)
             except Exception as err:
                 deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                 raise RuntimeError("Failed to run '{}' application".format(name)) from err
+
+    def read_app_logs(self, name, max_lines):
+        return self.__read_app_logs(name, max_lines)
 
     def halt_app(self, name):
         with DeployedArtifactsTracker(self.config) as deploy_tracker:
@@ -132,8 +140,8 @@ class AppManager(object):
                     update_tracker.record_app_update_status(name, state=UpdateState.applied)
 
                     if self.__is_run_app_automatically(name):
-                        self.__run_app(name)
-                        deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
+                        [lifecycle_state, message] = self.__run_app(name)
+                        deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=lifecycle_state, message=message)
 
                     # TODO Implement app self testing and roll back app if the same fails 
                     update_tracker.record_app_update_status(name, state=UpdateState.confirmed, message='Application update successfully completed')
@@ -158,8 +166,8 @@ class AppManager(object):
                     deploy_tracker.record_app_deployed_revision_change(name, revision, updating=False)
 
                     if self.__is_run_app_automatically(name):
-                        self.__run_app(name)
-                        deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.running)
+                        [lifecycle_state, message] = self.__run_app(name)
+                        deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=lifecycle_state, message=message)
 
                     update_tracker.record_app_update_status(name, state=UpdateState.rolled_back, message='Update roll backed due to application-level or external request')
                 except Exception as err:
