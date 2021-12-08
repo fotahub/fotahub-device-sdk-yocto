@@ -9,14 +9,18 @@ def to_pascalcase_keyed_dict(dict):
     return { stringcase.pascalcase(k): v for k, v in dict.items() }
 
 def from_pascalcase_keyed_dict(dict, enum_types=[]):
-    return { stringcase.snakecase(k): to_enum_literal(v, enum_types) for k, v in dict.items() }
+    return { stringcase.snakecase(k): to_enum_literal(stringcase.snakecase(k), v, enum_types) for k, v in dict.items() }
 
-def to_enum_literal(value, enum_types):
+def to_enum_literal(name, value, enum_types):
     if isinstance(value, str):
         for enum_type in enum_types:
-            for member in enum_type._member_map_.values():
-                if member._value_ == value:
-                    return member
+            if enum_type.__name__ == name:
+                if value == '':
+                    return None
+                else:
+                    for member in enum_type.__members__:
+                        if member.value == value:
+                            return member
     return value
 
 class PascalCaseJSONEncoder(JSONEncoder):
