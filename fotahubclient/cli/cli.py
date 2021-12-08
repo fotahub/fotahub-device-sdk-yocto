@@ -47,7 +47,7 @@ class CLI(object):
         cmd = cmds.add_parser(commands.READ_APPLICATION_LOGS_CMD, help='read the logs of an application', formatter_class=OptionHelpFormatter)
         set_command_parser_titles(cmd)
         cmd.add_argument('-n', '--name', required=True, help='name of application of which to read the logs')
-        cmd.add_argument('-l', '--max-lines', default=runc_operator.MAX_LOG_LINES_DEFAULT, help='maximum number of log lines to read (optional, defaults to ' + runc_operator.MAX_LOG_LINES_DEFAULT + ')')
+        cmd.add_argument('-l', '--max-lines', default=runc_operator.MAX_LOG_LINES_DEFAULT, help='maximum number of log lines to read (optional, defaults to ' + str(runc_operator.MAX_LOG_LINES_DEFAULT) + ')')
 
         cmd = cmds.add_parser(commands.HALT_APPLICATION_CMD, help='halt an application', formatter_class=OptionHelpFormatter)
         set_command_parser_titles(cmd)

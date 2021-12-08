@@ -5,7 +5,7 @@ import json
 from enum import Enum
 
 from fotahubclient.system_helper import get_process_text_outcome, read_last_lines
-from fotahubclient.system_helper import read_last_line
+from fotahubclient.system_helper import read_last_lines
 
 CONTAINER_LOG_OUT_FILE_NAME = 'log.out'
 CONTAINER_LOG_ERR_FILE_NAME = 'log.err'
