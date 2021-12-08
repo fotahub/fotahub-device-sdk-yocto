@@ -9,16 +9,16 @@ def to_pascalcase_keyed_dict(dict):
     return { stringcase.pascalcase(k): v for k, v in dict.items() }
 
 def from_pascalcase_keyed_dict(dict, enum_types=[]):
-    return { stringcase.snakecase(k): to_enum_literal(stringcase.snakecase(k), v, enum_types) for k, v in dict.items() }
+    return { stringcase.snakecase(k): to_enum_literal(k, v, enum_types) for k, v in dict.items() }
 
 def to_enum_literal(name, value, enum_types):
     if isinstance(value, str):
         for enum_type in enum_types:
-            if enum_type.__name__ == name:
+            if enum_type.__name__.endswith(name):
                 if value == '':
                     return None
                 else:
-                    for member in enum_type.__members__:
+                    for _, member in enum_type.__members__.items():
                         if member.value == value:
                             return member
     return value

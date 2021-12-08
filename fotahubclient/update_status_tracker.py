@@ -15,15 +15,15 @@ class UpdateStatusTracker(object):
         return self 
 
     def record_os_update_status(self, state=None, revision=None, status=True, message=None, save_instantly=False):
-        self.__record_update_status(self.config.os_distro_name, ArtifactKind.OperatingSystem, state, revision, status, message)
+        self.__record_update_status(self.config.os_distro_name, ArtifactKind.operating_system, state, revision, status, message)
         if save_instantly:
             UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path, True)
 
     def record_app_update_status(self, name, state=None, revision=None, status=True, message=None):
-        self.__record_update_status(name, ArtifactKind.Application, state, revision, status, message)
+        self.__record_update_status(name, ArtifactKind.application, state, revision, status, message)
 
     def record_fw_update_status(self, name, state=None, revision=None, status=True, message=None):
-        self.__record_update_status(name, ArtifactKind.Firmware, state, revision, status, message)
+        self.__record_update_status(name, ArtifactKind.firmware, state, revision, status, message)
 
     def __record_update_status(self, artifact_name, artifact_kind, state, revision, status, message):
         update_status = self.__lookup_update_status(artifact_name, artifact_kind)

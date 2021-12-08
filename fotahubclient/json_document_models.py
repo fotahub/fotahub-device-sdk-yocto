@@ -5,9 +5,9 @@ import os
 from fotahubclient.json_encode_decode import PascalCaseJSONEncoder, PascalCasedObjectArrayJSONDecoder
 
 class ArtifactKind(Enum):
-    OperatingSystem = 'OperatingSystem'
-    Application = 'Application'
-    Firmware = 'Firmware'
+    operating_system = 'OperatingSystem'
+    application = 'Application'
+    firmware = 'Firmware'
 
     def __str__(self):
         return self.value
@@ -119,7 +119,7 @@ class UpdateStatus(object):
             self.message = message
 
     def is_final(self, next_state):
-        return (self.state is not None and self.state.is_final(next_state)) or not self.status
+        return type(self.state) is not UpdateState or self.state.is_final(next_state) or not self.status
 
 class UpdateStatuses(object):
     def __init__(self, update_statuses=None):

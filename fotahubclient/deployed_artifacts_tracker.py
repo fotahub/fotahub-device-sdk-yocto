@@ -16,13 +16,13 @@ class DeployedArtifactsTracker(object):
         return self 
 
     def register_os(self, name, deployed_revision, rollback_revision=None):
-        self.__register_artifact(name, ArtifactKind.OperatingSystem, deployed_revision, rollback_revision, LifecycleState.running)
+        self.__register_artifact(name, ArtifactKind.operating_system, deployed_revision, rollback_revision, LifecycleState.running)
 
     def register_app(self, name, deployed_revision, rollback_revision=None):
-        self.__register_artifact(name, ArtifactKind.Application, deployed_revision, rollback_revision, LifecycleState.available)
+        self.__register_artifact(name, ArtifactKind.application, deployed_revision, rollback_revision, LifecycleState.available)
 
     def register_fw(self, name, deployed_revision, rollback_revision=None):
-        self.__register_artifact(name, ArtifactKind.Firmware, deployed_revision, rollback_revision, LifecycleState.running)
+        self.__register_artifact(name, ArtifactKind.firmware, deployed_revision, rollback_revision, LifecycleState.running)
 
     def __register_artifact(self, name, kind, deployed_revision, rollback_revision, lifecycle_state):
         deployed_artifact = self.__lookup_deployed_artifact(name, kind)
@@ -40,10 +40,10 @@ class DeployedArtifactsTracker(object):
             )
 
     def erase_app(self, name):
-        self.__erase_artifact(name, ArtifactKind.Application)
+        self.__erase_artifact(name, ArtifactKind.application)
 
     def erase_fw(self, name):
-        self.__erase_artifact(name, ArtifactKind.Firmware)
+        self.__erase_artifact(name, ArtifactKind.firmware)
 
     def __erase_artifact(self, name, kind):
         deployed_artifact = self.__lookup_deployed_artifact(name, kind)
@@ -51,21 +51,21 @@ class DeployedArtifactsTracker(object):
             self.__remove_deployed_artifact(deployed_artifact)
 
     def record_app_deployed_revision_change(self, name, deployed_revision, updating=True):
-        deployed_artifact = self.__lookup_deployed_artifact(name, ArtifactKind.Application)
+        deployed_artifact = self.__lookup_deployed_artifact(name, ArtifactKind.application)
         if deployed_artifact is not None:
             deployed_artifact.amend_revision_info(deployed_revision, updating)
         else:
             raise ValueError("Failed to record revision change for unknown application named '{}'".format(name))
 
     def record_fw_deployed_revision_change(self, name, deployed_revision, updating=True):
-        deployed_artifact = self.__lookup_deployed_artifact(name, ArtifactKind.Firmware)
+        deployed_artifact = self.__lookup_deployed_artifact(name, ArtifactKind.firmware)
         if deployed_artifact is not None:
             deployed_artifact.amend_revision_info(deployed_revision, updating)
         else:
             raise ValueError("Failed to record revision change for unknown firmware named '{}'".format(name))
 
     def record_app_lifecycle_status_change(self, name, lifecycle_state=None, status=True, message=None):
-        deployed_artifact = self.__lookup_deployed_artifact(name, ArtifactKind.Application)
+        deployed_artifact = self.__lookup_deployed_artifact(name, ArtifactKind.application)
         if deployed_artifact is not None:
             deployed_artifact.amend_lifecycle_info(lifecycle_state, status, message)
         else:
@@ -112,7 +112,7 @@ class DeployedArtifactsDescriber(object):
         os_updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
         return DeployedArtifact(
             os_updater.os_distro_name, 
-            ArtifactKind.OperatingSystem, 
+            ArtifactKind.operating_system, 
             os_updater.get_deployed_os_revision(),
             os_updater.get_rollback_os_revision()
         )
@@ -122,7 +122,7 @@ class DeployedArtifactsDescriber(object):
         return [
             DeployedArtifact(
                 name, 
-                ArtifactKind.Application, 
+                ArtifactKind.application, 
                 app_updater.get_app_deploy_revision(name),
                 None
             ) for name in app_updater.list_app_names() 

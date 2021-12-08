@@ -43,7 +43,7 @@ class AppUpdater(object):
         if os.path.isfile(deployed_artifacts_path) and os.path.getsize(deployed_artifacts_path) > 0:
             deployed_artifacts = DeployedArtifacts.load_deployed_artifacts(deployed_artifacts_path)
             rollback_versions = [deployed_artifact.rollback_revision for deployed_artifact in deployed_artifacts.deployed_artifacts 
-                if deployed_artifact.name == name and deployed_artifact.kind == ArtifactKind.Application]
+                if deployed_artifact.name == name and deployed_artifact.kind == ArtifactKind.application]
             return rollback_versions[0] if rollback_versions else None
         else:
             return None
