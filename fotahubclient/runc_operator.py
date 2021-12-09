@@ -40,18 +40,26 @@ class RunCOperator(object):
         return ContainerState.from_string(json.loads(process.stdout)['status'])
 
     def read_container_logs(self, bundle_path, max_lines=MAX_LOG_LINES_DEFAULT):
+        if max_lines < 0:
+            raise ValueError("'max_lines' must not be less than zero")
+
         out_path = '{}/{}'.format(bundle_path, CONTAINER_LOG_OUT_FILE_NAME)
+        has_out = os.path.isfile(out_path) and os.path.getsize(out_path) > 0
         err_path = '{}/{}'.format(bundle_path, CONTAINER_LOG_ERR_FILE_NAME)
+        has_err = os.path.isfile(err_path) and os.path.getsize(err_path) > 0
 
         logs = ''
-        if os.path.getsize(out_path):
-            logs = read_last_lines(out_path, max_lines if os.path.getsize(err_path) == 0 else max_lines - 1)
+
+        if has_out:
+            logs += read_last_lines(out_path, max_lines if not has_err else max_lines - 1)
 
         if logs and not logs.endswith('\n'):
             logs += '\n'
         
-        if os.path.getsize(err_path):
+        if has_err:
             logs += read_last_lines(err_path, 1)
+
+        return logs
 
     def run_container(self, container_id, bundle_path):
         container_state = self.get_container_state(container_id)

@@ -40,23 +40,35 @@ def get_process_text_outcome(process):
         return "Exit code {}".format(process.returncode) if process.returncode != 0 else ''
 
 def read_last_lines(path, max_lines):
+    if not os.path.isfile(path) or os.path.getsize(path) == 0:
+        return ''
+    
     with open(path, "rb") as file:
-        # Go to the end of the file before the last break-line
-        file.seek(-2, os.SEEK_END) 
-        
+        # Go to the end of the file (ignore trailing whitespace if any)
+        file.seek(-1, os.SEEK_END) 
+        while file.read(1).isspace():
+            if file.tell() >= 2:
+                file.seek(-2, os.SEEK_CUR)
+            else:
+                break
+
         # Move back specified number of lines
         for _ in range(max_lines):
             # Keep moving backward until the next break-line
+            file.seek(-1, os.SEEK_CUR)
             while file.read(1) != b'\n':
-                file.seek(-2, os.SEEK_CUR)
-            file.seek(-2, os.SEEK_CUR)
+                if file.tell() >= 2:
+                    file.seek(-2, os.SEEK_CUR)
+                else:
+                    break
+            file.seek(-1, os.SEEK_CUR)
             
-            # Keep going unless having returned to the beginning of the file
+            # Stop moving when having reached the beginning of the file again
             if file.tell() == 0:
                 break
 
         # Read file content from current position on and convert result into text
-        return file.read().decode()
+        return file.read().decode().strip()
 
 def reboot_system():
     logging.getLogger().info("Rebooting system")
