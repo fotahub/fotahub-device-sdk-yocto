@@ -43,6 +43,7 @@ class RunCOperator(object):
         out_path = '{}/{}'.format(bundle_path, CONTAINER_LOG_OUT_FILE_NAME)
         err_path = '{}/{}'.format(bundle_path, CONTAINER_LOG_ERR_FILE_NAME)
 
+        logs = ''
         if os.path.getsize(out_path):
             logs = read_last_lines(out_path, max_lines if os.path.getsize(err_path) == 0 else max_lines - 1)
 
