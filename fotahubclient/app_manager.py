@@ -4,12 +4,25 @@ import logging
 from enum import Enum
 
 from fotahubclient.app_updater import AppUpdater
-from fotahubclient.json_document_models import LifecycleState, UpdateState
+from fotahubclient.json_document_models import LifecycleState, UpdateCompletionState
 from fotahubclient.runc_operator import RunCOperator
 from fotahubclient.deployed_artifacts_tracker import DeployedArtifactsTracker
 from fotahubclient.update_status_tracker import UpdateStatusTracker
 import fotahubclient.common_constants as constants
 from fotahubclient.system_helper import touch
+from fotahubclient.runc_operator import RunCOperator, ContainerState
+
+def container_state_to_lifecycle_state(container_state, none_equivalent):
+    if container_state is ContainerState.created:
+        return LifecycleState.ready
+    elif container_state is ContainerState.running:
+        return LifecycleState.running
+    elif container_state is ContainerState.stopped:
+        return LifecycleState.finished
+    elif container_state is None:
+        return none_equivalent
+    else:
+        raise ValueError("Unknown container state: {}".format(container_state))
 
 class AppRunMode(Enum):
     automatic = 'automatic'
@@ -54,26 +67,40 @@ class AppManager(object):
         self.updater.checkout_app_revision(name, revision, self.__to_app_deploy_path(name))
 
     def __run_app(self, name):
-        if self.__is_app_deployed(name):
-            self.logger.info("Running '{}' application".format(name))
-            return self.runc.run_container(name, self.__to_app_deploy_path(name))
+        if not self.__is_app_deployed(name):
+            raise ValueError("Application '{}' not found".format(name))
+
+        self.logger.info("Running '{}' application".format(name))
+        [container_state, message] = self.runc.run_container(name, self.__to_app_deploy_path(name))
+        return [container_state_to_lifecycle_state(container_state, LifecycleState.ready), message]
+
+    def __get_app_lifecycle_state(self, name):
+        if not self.__is_app_deployed(name):
+            raise ValueError("Application '{}' not found".format(name))
+
+        self.logger.info("Retrieving '{}' application lifecycle state".format(name))
+        container_state = self.runc.get_container_state(name)
+        return container_state_to_lifecycle_state(container_state, LifecycleState.ready)
 
     def __read_app_logs(self, name, max_lines):
-        if self.__is_app_deployed(name):
-            self.logger.info("Reading '{}' application logs".format(name))
-            self.runc.read_container_logs(self.__to_app_deploy_path(name), max_lines)
+        if not self.__is_app_deployed(name):
+            raise ValueError("Application '{}' not found".format(name))
+
+        self.logger.info("Reading '{}' application logs".format(name))
+        return self.runc.read_container_logs(self.__to_app_deploy_path(name), max_lines)
 
     def __halt_app(self, name):
-        if self.__is_app_deployed(name):
-            self.logger.info("Halting '{}' application".format(name))
-            self.runc.delete_container(name)
+        if not self.__is_app_deployed(name):
+            raise ValueError("Application '{}' not found".format(name))
+
+        self.logger.info("Halting '{}' application".format(name))
+        self.runc.delete_container(name)
 
     def __delete_app(self, name):
-        if self.__is_app_deployed(name):
-            self.__halt_app(name)
+        self.__halt_app(name)
 
-            self.logger.info("Deleting '{}' application".format(name))
-            shutil.rmtree(self.__to_app_deploy_path(name))
+        self.logger.info("Deleting '{}' application".format(name))
+        shutil.rmtree(self.__to_app_deploy_path(name))
 
     def deploy_and_run_apps(self):
         with DeployedArtifactsTracker(self.config) as tracker:
@@ -105,9 +132,13 @@ class AppManager(object):
             try:
                 [lifecycle_state, message] = self.__run_app(name)
                 deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=lifecycle_state, message=message)
+                return message
             except Exception as err:
                 deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                 raise RuntimeError("Failed to run '{}' application".format(name)) from err
+
+    def get_app_lifecycle_state(self, name):
+        return self.__get_app_lifecycle_state(name)
 
     def read_app_logs(self, name, max_lines):
         return self.__read_app_logs(name, max_lines)
@@ -126,25 +157,27 @@ class AppManager(object):
             with UpdateStatusTracker(self.config) as update_tracker:
                 self.logger.info("Updating '{}' application to revision '{}'".format(name, revision))
                 try:
+                    update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.initiated, revision=revision)
+                    
                     self.__halt_app(name)
                     deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
-
+                    
                     self.updater.pull_app_update(name, revision)
-                    update_tracker.record_app_update_status(name, state=UpdateState.downloaded, revision=revision)
+                    update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.downloaded)
 
                     # TODO Implement checksum/signature verification
-                    update_tracker.record_app_update_status(name, state=UpdateState.verified)
+                    update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.verified)
                     
                     self.__apply_app_update(name, revision)
                     deploy_tracker.record_app_deployed_revision_change(name, revision, updating=True)
-                    update_tracker.record_app_update_status(name, state=UpdateState.applied)
+                    update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.applied)
 
                     if self.__is_run_app_automatically(name):
                         [lifecycle_state, message] = self.__run_app(name)
                         deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=lifecycle_state, message=message)
 
                     # TODO Implement app self testing and roll back app if the same fails 
-                    update_tracker.record_app_update_status(name, state=UpdateState.confirmed, message='Application update successfully completed')
+                    update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.confirmed, message='Application update successfully completed')
                 except Exception as err:
                     deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     update_tracker.record_app_update_status(name, revision=revision, status=False, message=str(err))
@@ -169,7 +202,7 @@ class AppManager(object):
                         [lifecycle_state, message] = self.__run_app(name)
                         deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=lifecycle_state, message=message)
 
-                    update_tracker.record_app_update_status(name, state=UpdateState.rolled_back, message='Update roll backed due to application-level or external request')
+                    update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.rolled_back, message='Update rolled back due to application-level or external request')
                 except Exception as err:
                     deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     update_tracker.record_app_update_status(name, revision=revision, status=False, message=str(err))

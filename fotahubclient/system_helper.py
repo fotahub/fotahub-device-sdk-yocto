@@ -10,18 +10,24 @@ def join_exception_messages(err, message=''):
     else:
         return message
 
-def run_hook_command(title, command, args=[]):
+def run_command(title, command, args=[]):
     if command:
         logging.getLogger().info("Running {}".format(title))
 
         command = shlex.split(command)
         args = [args] if not isinstance(args, list) else args
-        if command[0] == 'sh' or command[0] == 'bash':
+
+        # Running shell scripts requires the name of the shell or shell script to be injected explicitly as first argument 
+        # so that the $0 shell parameter gets assigned with the same and all other arguments get mapped to $1, $2, ...
+        if command[0].endswith('sh') or command[0].endswith('bash'):
             args = [command[0]] + args
-        
+
+        logging.getLogger().debug("Launching subprocess: {}".format(' '.join(command + args)))
         process = subprocess.run(command + args, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         outcome = get_process_text_outcome(process)
-        message = title + " {}" + (': ' + outcome if outcome else '').format('succeeded' if process.returncode == 0 else 'failed')
+        message = "{} {}".format(title, 'succeeded' if process.returncode == 0 else 'failed')
+        if outcome:
+            message += ": {}".format(outcome) 
         if process.returncode == 0:
             logging.getLogger().info(message)
             return [True, message]

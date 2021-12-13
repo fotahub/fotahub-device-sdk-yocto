@@ -14,31 +14,31 @@ class UpdateStatusTracker(object):
             self.update_statuses = UpdateStatuses.load_update_statuses(self.config.update_status_path)
         return self 
 
-    def record_os_update_status(self, state=None, revision=None, status=True, message=None, save_instantly=False):
-        self.__record_update_status(self.config.os_distro_name, ArtifactKind.operating_system, state, revision, status, message)
+    def record_os_update_status(self, completion_state=None, revision=None, status=True, message=None, save_instantly=False):
+        self.__record_update_status(self.config.os_distro_name, ArtifactKind.operating_system, completion_state, revision, status, message)
         if save_instantly:
             UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path, True)
 
-    def record_app_update_status(self, name, state=None, revision=None, status=True, message=None):
-        self.__record_update_status(name, ArtifactKind.application, state, revision, status, message)
+    def record_app_update_status(self, name, completion_state=None, revision=None, status=True, message=None):
+        self.__record_update_status(name, ArtifactKind.application, completion_state, revision, status, message)
 
-    def record_fw_update_status(self, name, state=None, revision=None, status=True, message=None):
-        self.__record_update_status(name, ArtifactKind.firmware, state, revision, status, message)
+    def record_fw_update_status(self, name, completion_state=None, revision=None, status=True, message=None):
+        self.__record_update_status(name, ArtifactKind.firmware, completion_state, revision, status, message)
 
-    def __record_update_status(self, artifact_name, artifact_kind, state, revision, status, message):
+    def __record_update_status(self, artifact_name, artifact_kind, completion_state, revision, status, message):
         update_status = self.__lookup_update_status(artifact_name, artifact_kind)
         if update_status is not None:
-            if not update_status.is_final(state):
+            if not update_status.initiates_new_update_cycle(completion_state):
                 update_status.amend(
                     revision, 
-                    state,
+                    completion_state,
                     status,
                     message)
             else:
                 update_status.reinit(
                     revision, 
                     self.__get_utc_timestamp(),
-                    state,
+                    completion_state,
                     status,
                     message)
         else:
@@ -48,7 +48,7 @@ class UpdateStatusTracker(object):
                     artifact_kind, 
                     revision,
                     self.__get_utc_timestamp(),
-                    state,
+                    completion_state,
                     status,
                     message
                 )
@@ -68,18 +68,3 @@ class UpdateStatusTracker(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path)
-
-class UpdateStatusDescriber(object):
-
-    def __init__(self, config):
-        self.config = config
-
-    def describe_update_status(self, artifact_names=[]):
-        if os.path.isfile(self.config.update_status_path) and os.path.getsize(self.config.update_status_path) > 0:
-            update_statuses = UpdateStatuses.load_update_statuses(self.config.update_status_path)
-            return UpdateStatuses([
-                update_status for update_status in update_statuses.update_statuses 
-                    if not artifact_names or update_status.artifact_name in artifact_names
-            ]).serialize()
-        else:
-            return UpdateStatuses().serialize()

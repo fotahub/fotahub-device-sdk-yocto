@@ -14,11 +14,10 @@ def main():
         cli = CLI()
         args = cli.parse_args()
         
-        config = ConfigLoader(config_path=args.config_path, verbose=args.verbose, stacktrace=args.stacktrace)
+        config = ConfigLoader(config_path=args.config_path, verbose=args.verbose, debug=args.debug, stacktrace=args.stacktrace)
         config.load()
 
-        log_level = logging.INFO if config.verbose else logging.WARNING
-        logging.basicConfig(stream=sys.stdout, level=log_level, format=constants.LOG_MESSAGE_FORMAT, datefmt=constants.LOG_DATE_FORMAT)
+        logging.basicConfig(stream=sys.stdout, level=config.log_level, format=constants.LOG_MESSAGE_FORMAT, datefmt=constants.LOG_DATE_FORMAT)
 
         command_interpreter = CommandInterpreter(config)
         command_interpreter.run(args)

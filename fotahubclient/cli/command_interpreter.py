@@ -2,8 +2,8 @@ import logging
 
 from fotahubclient.os_update_manager import OSUpdateManager
 from fotahubclient.app_manager import AppManager
-from fotahubclient.update_status_tracker import UpdateStatusDescriber
-from fotahubclient.deployed_artifacts_tracker import DeployedArtifactsDescriber
+from fotahubclient.update_status_describer import UpdateStatusDescriber
+from fotahubclient.deployed_artifacts_describer import DeployedArtifactsDescriber
 
 UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
 ROLL_BACK_OPERATING_SYSTEM_CMD = 'roll-back-operating-system'
@@ -54,7 +54,7 @@ class CommandInterpreter(object):
             self.describe_update_status(args.artifact_names)
 
     def update_operating_system(self, revision, max_reboot_failures):
-        self.logger.debug('Initiating OS update to revision ' + revision)
+        self.logger.debug("Initiating OS update to revision '{}'".format(revision))
 
         manager = OSUpdateManager(self.config)
         manager.initiate_os_update(revision, max_reboot_failures)
@@ -87,13 +87,17 @@ class CommandInterpreter(object):
         self.logger.debug('Running ' + name + ' application')
         
         manager = AppManager(self.config)
-        manager.run_app(name)
+        message = manager.run_app(name)
+        if message:
+            print(message)
 
     def read_application_logs(self, name, max_lines):
         self.logger.debug('Reading ' + name + ' application logs')
         
         manager = AppManager(self.config)
-        manager.read_app_logs(name, max_lines)
+        logs = manager.read_app_logs(name, max_lines)
+        if logs:
+            print(logs)
 
     def halt_application(self, name):
         self.logger.debug('Halting ' + name + ' application')
@@ -102,7 +106,7 @@ class CommandInterpreter(object):
         manager.halt_app(name)
 
     def update_application(self, name, revision):
-        self.logger.debug('Updating ' + name + ' application to revision ' + revision)
+        self.logger.debug("Updating ' + name + ' application to revision '{}'".format(revision))
         
         manager = AppManager(self.config)
         manager.update_app(name, revision)

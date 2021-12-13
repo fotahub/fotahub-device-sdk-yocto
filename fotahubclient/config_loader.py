@@ -1,4 +1,5 @@
 import os
+import logging
 import configparser
 from configparser import ConfigParser
 
@@ -10,7 +11,7 @@ USER_CONFIG_FILE_NAME = '.fotahub'
 
 class ConfigLoader(object):
     
-    def __init__(self, config_path=SYSTEM_CONFIG_PATH, verbose=False, stacktrace=False):
+    def __init__(self, config_path=SYSTEM_CONFIG_PATH, verbose=False, debug=False, stacktrace=False):
         self.config_path = config_path
         
         self.ostree_gpg_verify = False
@@ -18,7 +19,11 @@ class ConfigLoader(object):
         self.deployed_artifacts_path = None
         self.update_status_path = None
         
-        self.verbose = verbose
+        self.log_level = logging.WARNING
+        if verbose:
+            self.log_level = logging.INFO
+        if debug:
+            self.log_level = logging.DEBUG
         self.stacktrace = stacktrace
 
         self.os_distro_name = None
@@ -45,7 +50,9 @@ class ConfigLoader(object):
             self.update_status_path = config.get('General', 'UpdateStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
 
             if config.getboolean('General', 'Verbose', fallback=False):
-                self.verbose = True
+                self.log_level = logging.INFO
+            if config.getboolean('General', 'Debug', fallback=False):
+                self.log_level = logging.DEBUG
             if config.getboolean('General', 'Stacktrace', fallback=False):
                 self.stacktrace = True
 

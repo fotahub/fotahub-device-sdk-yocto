@@ -18,6 +18,7 @@ class CLI(object):
         set_command_parser_titles(self.cli_parser)
         self.cli_parser.add_argument('-c', '--config', dest='config_path', default=config_loader.SYSTEM_CONFIG_PATH, help='path to configuration file (optional, defaults to ' + config_loader.SYSTEM_CONFIG_PATH + ')')
         self.cli_parser.add_argument('-v', '--verbose', action='store_true', default=False, help='enable verbose output (optional, disabled by default)')
+        self.cli_parser.add_argument('-d', '--debug', action='store_true', default=False, help='enable debug output (optional, disabled by default)')
         self.cli_parser.add_argument('-s', '--stacktrace', action='store_true', default=False, help='enable output of stacktrace for exceptions (optional, disabled by default)')
         cmds = self.cli_parser.add_subparsers(dest='command')
 

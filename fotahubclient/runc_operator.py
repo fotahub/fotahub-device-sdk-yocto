@@ -5,7 +5,6 @@ import json
 from enum import Enum
 
 from fotahubclient.system_helper import get_process_text_outcome, read_last_lines
-from fotahubclient.system_helper import read_last_lines
 
 CONTAINER_LOG_OUT_FILE_NAME = 'log.out'
 CONTAINER_LOG_ERR_FILE_NAME = 'log.err'
@@ -53,7 +52,7 @@ class RunCOperator(object):
         if has_out:
             logs += read_last_lines(out_path, max_lines if not has_err else max_lines - 1)
 
-        if logs and not logs.endswith('\n'):
+        if logs and not logs.endswith('\n') and max_lines > 1:
             logs += '\n'
         
         if has_err:
@@ -67,7 +66,7 @@ class RunCOperator(object):
             raise RunCError("Cannot create and run '{}' container that has already been created - consider to delete it before")
         if container_state == ContainerState.running:
             self.logger.debug("Ignoring request to run '{}' container as it is already running".format(container_id))
-            return
+            return [container_state, '']
 
         if container_state == ContainerState.stopped:
             self.delete_container(container_id)
@@ -77,7 +76,7 @@ class RunCOperator(object):
             with open('{}/{}'.format(bundle_path, CONTAINER_LOG_ERR_FILE_NAME), "w") as err_file:
                 process = subprocess.run(["runc", "run", "--detach", "-b", bundle_path, container_id], universal_newlines=True, stdout=out_file, stderr=err_file, check=False)
                 if process.returncode == 0:
-                    return [self.get_container_state(container_id), self.read_container_logs(bundle_path)]
+                    return [self.get_container_state(container_id), self.read_container_logs(bundle_path, 1)]
                 else:
                     raise RunCError("Failed to create and run '{}' container: {}".format(container_id, err_file.read()))
 
@@ -96,7 +95,7 @@ class RunCOperator(object):
             pass
 
     def delete_container(self, container_id):
-        if not self.get_container_state(container_id):
+        if self.get_container_state(container_id) is None:
             self.logger.debug("Ignoring request to delete '{}' container as no such exists yet or anymore".format(container_id))
             return
 

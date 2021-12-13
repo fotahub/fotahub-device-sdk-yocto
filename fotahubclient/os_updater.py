@@ -90,7 +90,7 @@ class OSUpdater(object):
             raise OSTreeError("Failed to stage OS revision '{}'".format(revision)) from err
 
     def apply_os_update(self, revision, max_reboot_failures):
-        self.logger.info("Applying OS update to revision {}".format(revision))
+        self.logger.info("Applying OS update to revision '{}'".format(revision))
         if self.is_applying_os_update():
             raise OSTreeError("Cannot apply any new OS update when the some other OS update is still about to be applied")
         if self.is_rolling_back_os_update():
@@ -131,9 +131,9 @@ class OSUpdater(object):
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE)
 
     def discard_os_update(self):
-        self.logger.info("Discarding roll_backed OS update")
+        self.logger.info("Discarding rolled back OS update")
         if not self.is_rolling_back_os_update():
-            raise OSTreeError("Cannot discard OS update before any such has been roll_backed")
+            raise OSTreeError("Cannot discard OS update before any such has been rolled back")
         
         self.uboot.set_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE)
 
@@ -143,4 +143,4 @@ class OSUpdater(object):
                 # TODO Reimplement this behavior using OSTree API (see https://github.com/ostreedev/ostree/blob/8cb5d920c4b89d17c196f30f2c59fcbd4c762a17/src/ostree/ot-admin-builtin-undeploy.c#L59)
                 subprocess.run(["ostree", "admin", "undeploy", "0"], check=True)
         except subprocess.CalledProcessError as err:
-            raise OSTreeError("Failed to discard roll_backed OS update") from err
+            raise OSTreeError("Failed to discard rolled back OS update") from err

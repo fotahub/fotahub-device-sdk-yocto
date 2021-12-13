@@ -1,6 +1,7 @@
 from enum import Enum
 import json
 import os
+import logging
 
 from fotahubclient.json_encode_decode import PascalCaseJSONEncoder, PascalCasedObjectArrayJSONDecoder
 
@@ -20,8 +21,12 @@ class LifecycleState(Enum):
 
     def __str__(self):
         return self.value
+
+    def initiates_new_lifecycle(self, next_state):
+        return next_state == LifecycleState.ready
         
-class UpdateState(Enum):
+class UpdateCompletionState(Enum):
+    initiated = 'Initiated'
     downloaded = 'Downloaded'
     verified = 'Verified'
     applied = 'Applied'
@@ -31,11 +36,15 @@ class UpdateState(Enum):
     def __str__(self):
         return self.value
 
-    def is_final(self, next_state):
-        return self == UpdateState.confirmed and next_state != UpdateState.rolled_back or self == UpdateState.rolled_back
+    def initiates_rollback_cycle(self, next_state):
+        return self == UpdateCompletionState.confirmed and next_state == UpdateCompletionState.rolled_back
+
+    def initiates_new_update_cycle(self, next_state):
+        return (self == UpdateCompletionState.confirmed and next_state != UpdateCompletionState.rolled_back) or self == UpdateCompletionState.rolled_back
 
 class DeployedArtifact(object):
     def __init__(self, name, kind, deployed_revision, rollback_revision=None, lifecycle_state=LifecycleState.running, status=True, message=None):
+        logging.getLogger().debug("Initializing deployed artifact info: name={}, kind={}, deployed_revision={}, rollback_revision={}, lifecycle_state={}, status={}, message={}".format(name, kind, deployed_revision, rollback_revision, lifecycle_state, status, message))
         self.name = name
         self.kind = kind
         self.deployed_revision = deployed_revision
@@ -45,6 +54,7 @@ class DeployedArtifact(object):
         self.message = message
 
     def reinit(self, deployed_revision, rollback_revision=None, lifecycle_state=LifecycleState.running):
+        logging.getLogger().debug("Reinitializing deployed artifact info for '{}': deployed_revision={}, rollback_revision={}, lifecycle_state={}".format(self.name, deployed_revision, rollback_revision, lifecycle_state))
         self.deployed_revision = deployed_revision
         if rollback_revision:
             self.rollback_revision = rollback_revision
@@ -53,6 +63,7 @@ class DeployedArtifact(object):
         self.message = None
 
     def amend_revision_info(self, deployed_revision, updating=True):
+        logging.getLogger().debug("Amending revision info for '{}': deployed_revision={}".format(self.name, deployed_revision))
         if updating:
             self.rollback_revision = self.deployed_revision
             self.deployed_revision = deployed_revision
@@ -61,11 +72,16 @@ class DeployedArtifact(object):
             self.rollback_revision = None
 
     def amend_lifecycle_info(self, lifecycle_state=None, status=True, message=None):
+        logging.getLogger().debug("Amending lifecycle info for '{}': lifecycle_state={}, status={}, message={}".format(self.name, lifecycle_state, status, message))
+        # Keep/store latest non-empty message reported during current lifecycle, reinitialize it otherwise 
+        # !! Important Note !! Evaluate current lifecycle state *before* amending it
+        if message or (self.lifecycle_state is not None and self.lifecycle_state.initiates_new_lifecycle(lifecycle_state)):
+            self.message = message
+        # Keep/store latest lifecycle state
         if lifecycle_state is not None:
             self.lifecycle_state = lifecycle_state
+        # Store latest status
         self.status = status
-        if not self.message:
-            self.message = message
 
 class DeployedArtifacts(object):
     def __init__(self, deployed_artifacts=None):
@@ -93,33 +109,41 @@ class DeployedArtifactsJSONDecoder(PascalCasedObjectArrayJSONDecoder):
         super().__init__(DeployedArtifacts, DeployedArtifact, [ArtifactKind, LifecycleState])
 
 class UpdateStatus(object):
-    def __init__(self, artifact_name, artifact_kind, revision, deploy_timestamp, state=UpdateState.downloaded, status=True, message=None):
+    def __init__(self, artifact_name, artifact_kind, revision, deploy_timestamp, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
+        logging.getLogger().debug("Initializing update status: artifact_name={}, artifact_kind={}, revision={}, deploy_timestamp={}, completion_state={}, status={}, message={}".format(artifact_name, artifact_kind, revision, deploy_timestamp, completion_state, status, message))
         self.artifact_name = artifact_name
         self.artifact_kind = artifact_kind
         self.revision = revision
         self.deploy_timestamp = deploy_timestamp
-        self.state = state
+        self.completion_state = completion_state
         self.status = status
         self.message = message
 
-    def reinit(self, revision, deploy_timestamp, state=UpdateState.downloaded, status=True, message=None):
+    def reinit(self, revision, deploy_timestamp, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
+        logging.getLogger().debug("Reinitializing update status for '{}': revision={}, deploy_timestamp={}, completion_state={}, status={}, message={}".format(self.artifact_name, revision, deploy_timestamp, completion_state, status, message))
         self.revision = revision
         self.deploy_timestamp = deploy_timestamp
-        self.state = state
+        self.completion_state = completion_state
         self.status = status
         self.message = message
 
-    def amend(self, revision, state, status=True, message=None):
+    def amend(self, revision, completion_state, status=True, message=None):
+        logging.getLogger().debug("Amending update status for '{}': revision={}, completion_state={}, status={}, message={}".format(self.artifact_name, revision, completion_state, status, message))
+        # Keep first revision reported during current update/rollback cycle 
         if not self.revision:
             self.revision = revision
-        if state is not None:
-            self.state = state
-        self.status = status
-        if not self.message:
+        # Keep first non-empty message reported during current update/rollback cycle, reinitialize/reassign it otherwise 
+        # !! Important Note !! Evaluate current completion state *before* amending it
+        if not self.message or (self.completion_state is not None and self.completion_state.initiates_rollback_cycle(completion_state)):
             self.message = message
+        # Keep/store latest completion state
+        if completion_state is not None:
+            self.completion_state = completion_state
+        # Store latest status
+        self.status = status
 
-    def is_final(self, next_state):
-        return type(self.state) is not UpdateState or self.state.is_final(next_state) or not self.status
+    def initiates_new_update_cycle(self, next_state):
+        return type(self.completion_state) is not UpdateCompletionState or self.completion_state.initiates_new_update_cycle(next_state) or not self.status
 
 class UpdateStatuses(object):
     def __init__(self, update_statuses=None):
@@ -151,4 +175,4 @@ class UpdateStatuses(object):
 
 class UpdateStatusesJSONDecoder(PascalCasedObjectArrayJSONDecoder):
     def __init__(self):
-        super().__init__(UpdateStatuses, UpdateStatus, [ArtifactKind, UpdateState])
+        super().__init__(UpdateStatuses, UpdateStatus, [ArtifactKind, UpdateCompletionState])

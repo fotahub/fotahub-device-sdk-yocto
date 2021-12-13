@@ -11,6 +11,9 @@ UpdateStatusPath = /var/log/fotahub/update-status.json
 # Whether to enable verbose output
 Verbose = false 
 
+# Whether to enable debug output
+Debug = false 
+
 # Whether to enable output of stacktrace for exceptions
 Stacktrace = false 
 

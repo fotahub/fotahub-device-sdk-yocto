@@ -1,8 +1,6 @@
 import os
 
 from fotahubclient.json_document_models import ArtifactKind, LifecycleState, DeployedArtifacts, DeployedArtifact
-from fotahubclient.os_updater import OSUpdater
-from fotahubclient.app_updater import AppUpdater
 
 class DeployedArtifactsTracker(object):
  
@@ -85,46 +83,3 @@ class DeployedArtifactsTracker(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         DeployedArtifacts.save_deployed_artifacts(self.deployed_artifacts, self.config.deployed_artifacts_path)
-
-class DeployedArtifactsDescriber(object):
-
-    def __init__(self, config):
-        self.config = config
-
-    def describe_deployed_artifacts(self, artifact_names=[]):
-        if os.path.isfile(self.config.deployed_artifacts_path) and os.path.getsize(self.config.deployed_artifacts_path) > 0:
-            deployed_artifacts = DeployedArtifacts.load_deployed_artifacts(self.config.deployed_artifacts_path)
-            deployed_artifacts.deployed_artifacts.insert(0, self.describe_deployed_os())
-
-            return DeployedArtifacts([
-                deployed_artifact for deployed_artifact in deployed_artifacts.deployed_artifacts 
-                    if not artifact_names or deployed_artifact.name in artifact_names
-            ]).serialize()
-        else:
-            deployed_artifacts = DeployedArtifacts(
-                ([self.describe_deployed_os()] 
-                    if not artifact_names or self.config.os_distro_name in artifact_names else []) +
-                self.describe_deployed_apps(artifact_names)
-            )
-            return deployed_artifacts.serialize()
-
-    def describe_deployed_os(self):
-        os_updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
-        return DeployedArtifact(
-            os_updater.os_distro_name, 
-            ArtifactKind.operating_system, 
-            os_updater.get_deployed_os_revision(),
-            os_updater.get_rollback_os_revision()
-        )
-
-    def describe_deployed_apps(self, artifact_names=[]):
-        app_updater = AppUpdater(self.config.app_ostree_repo_path, self.config.ostree_gpg_verify)
-        return [
-            DeployedArtifact(
-                name, 
-                ArtifactKind.application, 
-                app_updater.get_app_deploy_revision(name),
-                None
-            ) for name in app_updater.list_app_names() 
-                if not artifact_names or name in artifact_names
-        ]

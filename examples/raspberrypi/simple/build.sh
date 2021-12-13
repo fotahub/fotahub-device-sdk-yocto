@@ -247,6 +247,7 @@ main()
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
+      DISTRO=fotahub-apps bitbake $APP -c cleanall
       DISTRO=fotahub-apps bitbake $APP -k $@
       
       show_latest_app_revision "$MACHINE" "$APP"
@@ -260,8 +261,8 @@ main()
       for APP in $(detect_apps $MACHINE); do
         DISTRO=fotahub-apps bitbake $APP -c clean
       done
-      DISTRO=fotahub-apps bitbake fotahub-apps-package -c clean
-      DISTRO=fotahub-os bitbake fotahub-os-package -c clean
+      DISTRO=fotahub-apps bitbake fotahub-apps-package -c cleanall
+      DISTRO=fotahub-os bitbake fotahub-os-package -c cleanall
       ;;
 
     show-revisions)
