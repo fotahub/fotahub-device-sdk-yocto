@@ -8,12 +8,13 @@
   <remote fetch="https://github.com/advancedtelematic" name="advancedtelematic"/>
   <remote fetch="https://github.com/fotahub" name="fotahub"/>
 
-  <project remote="yocto" revision="rocko" name="poky" path="poky"/>
-  <project remote="oe" revision="rocko" name="meta-openembedded" path="meta-openembedded"/>
+  <project remote="yocto" revision="zeus" name="poky" path="poky"/>
+  <project remote="oe" revision="zeus" name="meta-openembedded" path="meta-openembedded"/>
   
-  <project remote="yocto" revision="rocko" name="meta-raspberrypi" path="meta-raspberrypi"/>
+  <project remote="yocto" revision="zeus" name="meta-raspberrypi" path="meta-raspberrypi"/>
   
-  <project remote="advancedtelematic" revision="rocko" name="meta-updater" path="meta-updater"/>
-  <project remote="fotahub" revision="rocko" name="meta-fotahub" path="meta-fotahub"/>
+  <project remote="advancedtelematic" revision="zeus" name="meta-updater" path="meta-updater"/>
+  <project remote="advancedtelematic" revision="zeus" name="meta-updater-raspberrypi" path="meta-updater-raspberrypi"/>
+  <project remote="fotahub" revision="zeus" name="meta-fotahub" path="meta-fotahub"/>
 
 </manifest>
