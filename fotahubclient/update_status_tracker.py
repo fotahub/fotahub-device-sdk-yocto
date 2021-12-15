@@ -1,5 +1,4 @@
 import os
-import time
 
 from fotahubclient.json_document_models import ArtifactKind, UpdateStatuses, UpdateStatus
 
@@ -37,7 +36,6 @@ class UpdateStatusTracker(object):
             else:
                 update_status.reinit(
                     revision, 
-                    self.__get_utc_timestamp(),
                     completion_state,
                     status,
                     message)
@@ -47,16 +45,12 @@ class UpdateStatusTracker(object):
                     artifact_name, 
                     artifact_kind, 
                     revision,
-                    self.__get_utc_timestamp(),
                     completion_state,
                     status,
                     message
                 )
             )
     
-    def __get_utc_timestamp(self):
-        return int(time.time())
-
     def __lookup_update_status(self, artifact_name, artifact_kind):
         for update_status in self.update_statuses.update_statuses:
             if update_status.artifact_name == artifact_name and update_status.artifact_kind == artifact_kind:

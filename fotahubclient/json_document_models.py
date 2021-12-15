@@ -1,6 +1,7 @@
 from enum import Enum
 import json
 import os
+import time
 import logging
 
 from fotahubclient.json_encode_decode import PascalCaseJSONEncoder, PascalCasedObjectArrayJSONDecoder
@@ -35,12 +36,6 @@ class UpdateCompletionState(Enum):
 
     def __str__(self):
         return self.value
-
-    def initiates_rollback_cycle(self, next_state):
-        return self == UpdateCompletionState.confirmed and next_state == UpdateCompletionState.rolled_back
-
-    def initiates_new_update_cycle(self, next_state):
-        return (self == UpdateCompletionState.confirmed and next_state != UpdateCompletionState.rolled_back) or self == UpdateCompletionState.rolled_back
 
 class DeployedArtifact(object):
     def __init__(self, name, kind, deployed_revision, rollback_revision=None, lifecycle_state=LifecycleState.running, status=True, message=None):
@@ -109,20 +104,20 @@ class DeployedArtifactsJSONDecoder(PascalCasedObjectArrayJSONDecoder):
         super().__init__(DeployedArtifacts, DeployedArtifact, [ArtifactKind, LifecycleState])
 
 class UpdateStatus(object):
-    def __init__(self, artifact_name, artifact_kind, revision, deploy_timestamp, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
-        logging.getLogger().debug("Initializing update status: artifact_name={}, artifact_kind={}, revision={}, deploy_timestamp={}, completion_state={}, status={}, message={}".format(artifact_name, artifact_kind, revision, deploy_timestamp, completion_state, status, message))
+    def __init__(self, artifact_name, artifact_kind, revision, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
+        logging.getLogger().debug("Initializing update status: artifact_name={}, artifact_kind={}, revision={}, completion_state={}, status={}, message={}".format(artifact_name, artifact_kind, revision, completion_state, status, message))
         self.artifact_name = artifact_name
         self.artifact_kind = artifact_kind
         self.revision = revision
-        self.deploy_timestamp = deploy_timestamp
+        self.timestamp = self.__get_utc_timestamp()
         self.completion_state = completion_state
         self.status = status
         self.message = message
 
-    def reinit(self, revision, deploy_timestamp, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
-        logging.getLogger().debug("Reinitializing update status for '{}': revision={}, deploy_timestamp={}, completion_state={}, status={}, message={}".format(self.artifact_name, revision, deploy_timestamp, completion_state, status, message))
+    def reinit(self, revision, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
+        logging.getLogger().debug("Reinitializing update status for '{}': revision={}, completion_state={}, status={}, message={}".format(self.artifact_name, revision, completion_state, status, message))
         self.revision = revision
-        self.deploy_timestamp = deploy_timestamp
+        self.timestamp = self.__get_utc_timestamp()
         self.completion_state = completion_state
         self.status = status
         self.message = message
@@ -132,9 +127,12 @@ class UpdateStatus(object):
         # Keep first revision reported during current update/rollback cycle 
         if not self.revision:
             self.revision = revision
+        # Renew timestamp when rollback starts, keep existime timestamp otherwise
+        if self.initiates_rollback_cycle(completion_state):
+            self.timestamp = self.__get_utc_timestamp()
         # Keep first non-empty message reported during current update/rollback cycle, reinitialize/reassign it otherwise 
         # !! Important Note !! Evaluate current completion state *before* amending it
-        if not self.message or (self.completion_state is not None and self.completion_state.initiates_rollback_cycle(completion_state)):
+        if not self.message or self.initiates_rollback_cycle(completion_state):
             self.message = message
         # Keep/store latest completion state
         if completion_state is not None:
@@ -142,8 +140,23 @@ class UpdateStatus(object):
         # Store latest status
         self.status = status
 
+    def __get_utc_timestamp(self):
+        return int(time.time())
+
+    def initiates_rollback_cycle(self, next_state):
+        return self.completion_state == UpdateCompletionState.confirmed and next_state == UpdateCompletionState.rolled_back
+
     def initiates_new_update_cycle(self, next_state):
-        return type(self.completion_state) is not UpdateCompletionState or self.completion_state.initiates_new_update_cycle(next_state) or not self.status
+        if type(self.completion_state) is not UpdateCompletionState:
+            return True
+
+        if self.completion_state == UpdateCompletionState.confirmed and next_state != UpdateCompletionState.rolled_back:
+            return True
+        if self.completion_state == UpdateCompletionState.rolled_back:
+            return True
+        if not self.status:
+            return True
+        return False
 
 class UpdateStatuses(object):
     def __init__(self, update_statuses=None):
