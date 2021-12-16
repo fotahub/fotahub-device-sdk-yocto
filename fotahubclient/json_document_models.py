@@ -104,12 +104,12 @@ class DeployedArtifactsJSONDecoder(PascalCasedObjectArrayJSONDecoder):
         super().__init__(DeployedArtifacts, DeployedArtifact, [ArtifactKind, LifecycleState])
 
 class UpdateStatus(object):
-    def __init__(self, artifact_name, artifact_kind, revision, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
+    def __init__(self, artifact_name, artifact_kind, revision, timestamp=None, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
         logging.getLogger().debug("Initializing update status: artifact_name={}, artifact_kind={}, revision={}, completion_state={}, status={}, message={}".format(artifact_name, artifact_kind, revision, completion_state, status, message))
         self.artifact_name = artifact_name
         self.artifact_kind = artifact_kind
         self.revision = revision
-        self.timestamp = self.__get_utc_timestamp()
+        self.timestamp = timestamp if timestamp is not None else self.__get_utc_timestamp()
         self.completion_state = completion_state
         self.status = status
         self.message = message

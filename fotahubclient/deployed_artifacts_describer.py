@@ -14,8 +14,10 @@ class DeployedArtifactsDescriber(object):
         if os.path.isfile(self.config.deployed_artifacts_path) and os.path.getsize(self.config.deployed_artifacts_path) > 0:
             deployed_artifacts = DeployedArtifacts.load_deployed_artifacts(self.config.deployed_artifacts_path)
             
-            for deployed_app in deployed_artifacts.deployed_artifacts:
-                deployed_app.lifecycle_state = self.app_manager.get_app_lifecycle_state(deployed_app.name)
+            for deployed_artifact in deployed_artifacts.deployed_artifacts:
+                if deployed_artifact.kind == ArtifactKind.application:
+                    deployed_artifact.lifecycle_state = self.app_manager.get_app_lifecycle_state(deployed_artifact.name)
+                    
             deployed_artifacts.deployed_artifacts.insert(0, self.describe_deployed_os())
 
             return DeployedArtifacts([
