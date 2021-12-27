@@ -104,7 +104,7 @@ class DeployedArtifactsJSONDecoder(PascalCasedObjectArrayJSONDecoder):
         super().__init__(DeployedArtifacts, DeployedArtifact, [ArtifactKind, LifecycleState])
 
 class UpdateStatus(object):
-    def __init__(self, artifact_name, artifact_kind, revision, timestamp=None, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
+    def __init__(self, artifact_name, artifact_kind, revision, timestamp=None, completion_state=UpdateCompletionState.initiated, status=True, message=None):
         logging.getLogger().debug("Initializing update status: artifact_name={}, artifact_kind={}, revision={}, completion_state={}, status={}, message={}".format(artifact_name, artifact_kind, revision, completion_state, status, message))
         self.artifact_name = artifact_name
         self.artifact_kind = artifact_kind
@@ -114,7 +114,7 @@ class UpdateStatus(object):
         self.status = status
         self.message = message
 
-    def reinit(self, revision, completion_state=UpdateCompletionState.downloaded, status=True, message=None):
+    def reinit(self, revision, completion_state=UpdateCompletionState.initiated, status=True, message=None):
         logging.getLogger().debug("Reinitializing update status for '{}': revision={}, completion_state={}, status={}, message={}".format(self.artifact_name, revision, completion_state, status, message))
         self.revision = revision
         self.timestamp = self.__get_utc_timestamp()
@@ -127,7 +127,7 @@ class UpdateStatus(object):
         # Keep first revision reported during current update/rollback cycle 
         if not self.revision:
             self.revision = revision
-        # Renew timestamp when rollback starts, keep existime timestamp otherwise
+        # Renew timestamp when rollback starts, keep existing timestamp otherwise
         if self.initiates_rollback_cycle(completion_state):
             self.timestamp = self.__get_utc_timestamp()
         # Keep first non-empty message reported during current update/rollback cycle, reinitialize/reassign it otherwise 

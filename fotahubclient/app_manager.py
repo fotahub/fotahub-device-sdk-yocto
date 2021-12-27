@@ -157,7 +157,7 @@ class AppManager(object):
             with UpdateStatusTracker(self.config) as update_tracker:
                 self.logger.info("Updating '{}' application to revision '{}'".format(name, revision))
                 try:
-                    update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.initiated, revision=revision)
+                    update_tracker.record_app_update_status(name, revision=revision, completion_state=UpdateCompletionState.initiated)
                     
                     self.__halt_app(name)
                     deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
@@ -180,7 +180,7 @@ class AppManager(object):
                     update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.confirmed, message='Application update successfully completed')
                 except Exception as err:
                     deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
-                    update_tracker.record_app_update_status(name, revision=revision, status=False, message=str(err))
+                    update_tracker.record_app_update_status(name, status=False, message=str(err))
                     raise RuntimeError("Failed to update '{}' application".format(name)) from err
 
     def roll_back_app(self, name):
@@ -205,7 +205,7 @@ class AppManager(object):
                     update_tracker.record_app_update_status(name, completion_state=UpdateCompletionState.rolled_back, message='Update rolled back due to application-level or external request')
                 except Exception as err:
                     deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
-                    update_tracker.record_app_update_status(name, revision=revision, status=False, message=str(err))
+                    update_tracker.record_app_update_status(name, status=False, message=str(err))
                     raise RuntimeError("Failed to roll back '{}' application".format(name)) from err
 
     def delete_app(self, name):

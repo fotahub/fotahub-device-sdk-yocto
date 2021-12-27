@@ -18,20 +18,20 @@ class OSUpdateManager(object):
     def initiate_os_update(self, revision, max_reboot_failures):
         with UpdateStatusTracker(self.config) as tracker:
             try:
-                tracker.record_os_update_status(completion_state=UpdateCompletionState.initiated, revision=revision)
+                tracker.record_os_update_status(revision=revision, completion_state=UpdateCompletionState.initiated)
 
                 self.updater.pull_os_update(revision)
                 tracker.record_os_update_status(completion_state=UpdateCompletionState.downloaded)
 
                 [success, message] = run_command('OS update verification', self.config.os_update_verification_command, revision)
                 if success:
-                    tracker.record_os_update_status(completion_state=UpdateCompletionState.verified, revision=revision, save_instantly=True)
+                    tracker.record_os_update_status(completion_state=UpdateCompletionState.verified, save_instantly=True)
                     self.updater.apply_os_update(revision, max_reboot_failures)
                 else:
                     raise RuntimeError(message)
 
             except Exception as err:
-                tracker.record_os_update_status(revision=revision, status=False, message=str(err))
+                tracker.record_os_update_status(status=False, message=str(err))
                 raise err
 
     def roll_back_os_update(self):

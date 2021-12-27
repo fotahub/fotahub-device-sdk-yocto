@@ -1,0 +1,25 @@
+name: Build & test FotaHub Edge Update Client (Python package)
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Python 3
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.x
+      - name: Install package under development and dependencies
+        run: |
+          sudo apt install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0
+          python -m pip install --upgrade pip setuptools pytest
+          python -m pip install .
+      - name: Run tests with pytest
+        run: python test_fotahub.py 
