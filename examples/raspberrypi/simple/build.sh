@@ -79,7 +79,8 @@ locate_build_results()
   OS_OSTREE_REPO_DIR="$OS_IMAGE_DIR/ostree_repo"
   APPS_OSTREE_REPO_DIR="$APPS_IMAGE_DIR/ostree_repo"
 
-  OS_DISK_IMAGE_FILE="$OS_IMAGE_DIR/fotahub-os-package-$MACHINE.wic"
+  APPS_IMAGE_FILE="$APPS_IMAGE_DIR/fotahub-apps-package-$MACHINE.ext4"
+  WIC_IMAGE_FILE="$OS_IMAGE_DIR/fotahub-os-package-$MACHINE.wic"
 }
 
 detect_apps()
@@ -95,15 +96,24 @@ detect_apps()
   fi
 }
 
-yield_latest_os_disk_image()
+exists_apps_image()
 {
   local MACHINE=$1
 
   locate_build_results $MACHINE
 
-  if [ -f "$OS_DISK_IMAGE_FILE" ]; then
+  [ -f "$APPS_IMAGE_FILE" ] && return 0 || return 1
+}
+
+yield_latest_wic_image()
+{
+  local MACHINE=$1
+
+  locate_build_results $MACHINE
+
+  if [ -f "$WIC_IMAGE_FILE" ]; then
     mkdir -p "$YOCTO_PROJECT_DIR/build/images"
-    cp "$OS_DISK_IMAGE_FILE" "$YOCTO_PROJECT_DIR/build/images"
+    cp "$WIC_IMAGE_FILE" "$YOCTO_PROJECT_DIR/build/images"
   fi
 }
 
@@ -150,18 +160,21 @@ Commands:
         Initialize/synchronize Yocto project for given machine
         (e.g. sync raspberrypi3)
 
-    all <bitbake args...>
+    wic <bitbake args...>
         Build and publish OS and application images,
         and create machine-dependent live disk image including OS and applications
         (e.g. '.wic' for Raspberry Pi)
 
-    all-apps <bitbake args...>
+    os <bitbake args...>
+        Build and publish OS image
+
+    apps <bitbake args...>
         Build and publish all application images
 
     app <app-name> <bitbake args...>
         Build and publish image of given application
 
-    clean-all
+    clean
         Clean OS and all applications
 
     show-revisions
@@ -212,7 +225,7 @@ main()
       source $YOCTO_SOURCES_DIR/meta-fotahub/fh-post-init-build-env $MACHINE
       ;;
 
-    all)
+    wic)
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
@@ -220,12 +233,28 @@ main()
       DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
       DISTRO=fotahub-os bitbake fotahub-os-package -k $@
 
-      yield_latest_os_disk_image "$MACHINE"
+      yield_latest_wic_image "$MACHINE"
       show_latest_os_revision "$MACHINE"
       show_latest_app_revisions "$MACHINE"
       ;;
 
-    all-apps)
+    os)
+      cd "$YOCTO_DATA_DIR"
+      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      local MACHINE=$(detect_machine)
+
+      # Conceptionally it would not be necessary to build the apps image along with the OS image right here. But technically,
+      # there are no means to prevent the do_image_wic task from running when only the OS image is meant to be built, 
+      # and that task would cause the build to fail if the apps image does not exist
+      if ! exists_apps_image "$MACHINE"; then
+        DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
+      fi
+      DISTRO=fotahub-os bitbake fotahub-os-package -k $@
+
+      show_latest_os_revision "$MACHINE"
+      ;;
+
+    apps)
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
@@ -253,7 +282,7 @@ main()
       show_latest_app_revision "$MACHINE" "$APP"
       ;;
 
-    clean-all)
+    clean)
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)

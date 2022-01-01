@@ -80,7 +80,7 @@ def reboot_system():
     logging.getLogger().info("Rebooting system")
     
     try:
-        subprocess.run("reboot", check=True)
+        subprocess.run(["reboot", "--force"], check=True)
     except subprocess.CalledProcessError as err:
         raise OSError("Failed to reboot system") from err
 
