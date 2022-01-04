@@ -3,35 +3,35 @@
 create_yocto_project_layout()
 {
   # Locate Yocto project
-  if [ -z "$YOCTO_PROJECT_DIR" ]; then
-    export YOCTO_PROJECT_DIR=$PWD
+  if [ -z "$YOCTO_PROJECT_ROOT" ]; then
+    export YOCTO_PROJECT_ROOT=$PWD/yocto
   fi
-
-  # Locate/create Yocto data area
-  if [ -z "$YOCTO_DATA_DIR" ]; then
-    export YOCTO_DATA_DIR=$PWD/build/yocto
-  fi
-  if [ ! -d "$YOCTO_DATA_DIR" ]; then
-    mkdir -p "$YOCTO_DATA_DIR"
+  if [ ! -d "$YOCTO_PROJECT_ROOT" ]; then
+    mkdir -p "$YOCTO_PROJECT_ROOT"
   fi
 
   # Locate Yocto layer sources area
   if [ -z "$YOCTO_SOURCES_DIR" ]; then
-    export YOCTO_SOURCES_DIR="$YOCTO_DATA_DIR/sources"
+    export YOCTO_SOURCES_DIR="$YOCTO_PROJECT_ROOT/sources"
+  fi
+
+  # Locate Yocto project cockpit area
+  if [ -z "$YOCTO_COCKPIT_DIR" ]; then
+    export YOCTO_COCKPIT_DIR="$YOCTO_PROJECT_ROOT/cockpit"
   fi
 
   # Locate Yocto layer sources git-repo manifest
-  if [ -z "$YOCTO_LAYER_MANIFEST_FILE" ]; then
-    YOCTO_LAYER_MANIFEST_FILE="$YOCTO_PROJECT_DIR/manifest.xml"
+  if [ -z "$YOCTO_LAYER_MANIFEST" ]; then
+    YOCTO_LAYER_MANIFEST="$YOCTO_COCKPIT_DIR/manifest.xml"
   fi
-  if [ ! -f "$YOCTO_LAYER_MANIFEST_FILE" ] || [ ! -s "$YOCTO_LAYER_MANIFEST_FILE" ]; then
-    echo "ERROR: The Yocto layer git-repo manifest '$YOCTO_LAYER_MANIFEST_FILE' is missing."
+  if [ ! -f "$YOCTO_LAYER_MANIFEST" ] || [ ! -s "$YOCTO_LAYER_MANIFEST" ]; then
+    echo "ERROR: The Yocto layer git-repo manifest '$YOCTO_LAYER_MANIFEST' is missing."
     return 1
   fi
 
   # Locate Yocto build area
   if [ -z "$YOCTO_BUILD_DIR" ]; then
-    export YOCTO_BUILD_DIR="$YOCTO_DATA_DIR/build"
+    export YOCTO_BUILD_DIR="$YOCTO_PROJECT_ROOT/build"
   fi
 
   return 0
@@ -112,8 +112,8 @@ yield_latest_wic_image()
   locate_build_results $MACHINE
 
   if [ -f "$WIC_IMAGE_FILE" ]; then
-    mkdir -p "$YOCTO_PROJECT_DIR/build/images"
-    cp "$WIC_IMAGE_FILE" "$YOCTO_PROJECT_DIR/build/images"
+    mkdir -p "$YOCTO_COCKPIT_DIR/build/images"
+    cp "$WIC_IMAGE_FILE" "$YOCTO_COCKPIT_DIR/build/images"
   fi
 }
 
@@ -207,6 +207,8 @@ main()
     exit 1
   fi
 
+  cd "$YOCTO_PROJECT_ROOT"
+
   case "$COMMAND" in
     sync)
       if [ $# -ne 1 ]; then
@@ -215,18 +217,16 @@ main()
       fi
       local MACHINE=$1
 
-      if ! sync_yocto_layers "$YOCTO_LAYER_MANIFEST_FILE" "$YOCTO_SOURCES_DIR"; then
+      if ! sync_yocto_layers "$YOCTO_LAYER_MANIFEST" "$YOCTO_SOURCES_DIR"; then
         exit 1
       fi
 
-      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/meta-fotahub/fh-pre-init-build-env $MACHINE
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       source $YOCTO_SOURCES_DIR/meta-fotahub/fh-post-init-build-env $MACHINE
       ;;
 
     wic)
-      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
@@ -239,7 +239,6 @@ main()
       ;;
 
     os)
-      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
@@ -255,7 +254,6 @@ main()
       ;;
 
     apps)
-      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
@@ -272,7 +270,6 @@ main()
       local APP=$1
       shift; set -- "$@"
 
-      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
@@ -283,12 +280,11 @@ main()
       ;;
 
     clean)
-      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
       for APP in $(detect_apps $MACHINE); do
-        DISTRO=fotahub-apps bitbake $APP -c clean
+        DISTRO=fotahub-apps bitbake $APP -c cleanall
       done
       DISTRO=fotahub-apps bitbake fotahub-apps-package -c cleanall
       DISTRO=fotahub-os bitbake fotahub-os-package -c cleanall
@@ -302,7 +298,6 @@ main()
       ;;
   
     bash)
-      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       export MACHINE=$(detect_machine)
 
