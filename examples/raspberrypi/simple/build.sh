@@ -10,9 +10,9 @@ create_yocto_project_layout()
     mkdir -p "$YOCTO_PROJECT_ROOT"
   fi
 
-  # Locate Yocto layer sources area
-  if [ -z "$YOCTO_SOURCES_DIR" ]; then
-    export YOCTO_SOURCES_DIR="$YOCTO_PROJECT_ROOT/sources"
+  # Locate Yocto layers area
+  if [ -z "$YOCTO_LAYERS_DIR" ]; then
+    export YOCTO_LAYERS_DIR="$YOCTO_PROJECT_ROOT/layers"
   fi
 
   # Locate Yocto project cockpit area
@@ -20,12 +20,12 @@ create_yocto_project_layout()
     export YOCTO_COCKPIT_DIR="$YOCTO_PROJECT_ROOT/cockpit"
   fi
 
-  # Locate Yocto layer sources git-repo manifest
+  # Locate Yocto layer git-repo manifest
   if [ -z "$YOCTO_LAYER_MANIFEST" ]; then
     YOCTO_LAYER_MANIFEST="$YOCTO_COCKPIT_DIR/manifest.xml"
   fi
   if [ ! -f "$YOCTO_LAYER_MANIFEST" ] || [ ! -s "$YOCTO_LAYER_MANIFEST" ]; then
-    echo "ERROR: The Yocto layer git-repo manifest '$YOCTO_LAYER_MANIFEST' is missing."
+    echo "ERROR: The Yocto layer git-repo manifest '$YOCTO_LAYER_MANIFEST' does not exist."
     return 1
   fi
 
@@ -217,17 +217,17 @@ main()
       fi
       local MACHINE=$1
 
-      if ! sync_yocto_layers "$YOCTO_LAYER_MANIFEST" "$YOCTO_SOURCES_DIR"; then
+      if ! sync_yocto_layers "$YOCTO_LAYER_MANIFEST" "$YOCTO_LAYERS_DIR"; then
         exit 1
       fi
 
-      source $YOCTO_SOURCES_DIR/meta-fotahub/fh-pre-init-build-env $MACHINE
-      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
-      source $YOCTO_SOURCES_DIR/meta-fotahub/fh-post-init-build-env $MACHINE
+      source $YOCTO_LAYERS_DIR/meta-fotahub/fh-pre-init-build-env $MACHINE
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      source $YOCTO_LAYERS_DIR/meta-fotahub/fh-post-init-build-env $MACHINE
       ;;
 
     wic)
-      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
       DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
@@ -239,7 +239,7 @@ main()
       ;;
 
     os)
-      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
       # Conceptionally it would not be necessary to build the apps image along with the OS image right here. But technically,
@@ -254,7 +254,7 @@ main()
       ;;
 
     apps)
-      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
       DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
@@ -270,7 +270,7 @@ main()
       local APP=$1
       shift; set -- "$@"
 
-      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
       DISTRO=fotahub-apps bitbake $APP -c cleanall
@@ -280,7 +280,7 @@ main()
       ;;
 
     clean)
-      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
       for APP in $(detect_apps $MACHINE); do
@@ -298,7 +298,7 @@ main()
       ;;
   
     bash)
-      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       export MACHINE=$(detect_machine)
 
       bash
