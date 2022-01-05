@@ -1,11 +1,10 @@
-import subprocess
 import logging
-import shlex
 
 from fotahubclient.os_updater import OSUpdater
 from fotahubclient.system_helper import run_command
 from fotahubclient.update_status_tracker import UpdateStatusTracker
 from fotahubclient.json_document_models import UpdateCompletionState
+from fotahubclient.system_helper import reboot_system
 
 class OSUpdateManager(object):
 
@@ -27,6 +26,7 @@ class OSUpdateManager(object):
                 if success:
                     tracker.record_os_update_status(completion_state=UpdateCompletionState.verified, save_instantly=True)
                     self.updater.apply_os_update(revision, max_reboot_failures)
+                    reboot_system()
                 else:
                     raise RuntimeError(message)
 
@@ -38,6 +38,7 @@ class OSUpdateManager(object):
         with UpdateStatusTracker(self.config) as tracker:
             try:
                 self.updater.roll_back_os_update()
+                reboot_system()
             except Exception as err:
                 tracker.record_os_update_status(status=False, message=str(err))
                 raise err
@@ -57,6 +58,7 @@ class OSUpdateManager(object):
                     else:
                         tracker.record_os_update_status(message=message, save_instantly=True)
                         self.updater.roll_back_os_update()
+                        reboot_system()
                 
                 elif self.updater.is_rolling_back_os_update():
                     tracker.record_os_update_status(completion_state=UpdateCompletionState.rolled_back, message='Update rolled back due to application-level or external request')

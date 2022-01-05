@@ -8,7 +8,6 @@ from gi.repository import OSTree, GLib
 import fotahubclient.common_constants as constants
 from fotahubclient.ostree_repo import OSTreeRepo, OSTreeError
 from fotahubclient.uboot_operator import UBootOperator
-from fotahubclient.system_helper import reboot_system
 
 OSTREE_SYSTEM_REPOSITORY_PATH = '/ostree/repo'
 
@@ -103,8 +102,6 @@ class OSUpdater(object):
         self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE, '1')
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT, str(max_reboot_failures))
 
-        reboot_system()
-
     def is_applying_os_update(self):
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE)
 
@@ -124,8 +121,6 @@ class OSUpdater(object):
         self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE)
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
         self.uboot.set_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE, '1')
-
-        reboot_system()
 
     def is_rolling_back_os_update(self):
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE)
