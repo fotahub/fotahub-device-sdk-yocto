@@ -15,6 +15,10 @@ class OSTreeRepo(object):
         
         self.ostree_repo = repo
 
+    def guess_remote_name(self, default_name):
+        [_, refs] = self.ostree_repo.list_refs(None, None)
+        return refs[0].split(':')[0] if refs and ':' in refs[0] else default_name
+
     def has_ostree_remote(self, name):
         return name in self.ostree_repo.remote_list()
 
@@ -58,8 +62,7 @@ class OSTreeRepo(object):
                     'depth': GLib.Variant('i', depth)
                 }
             )
-            result = self.ostree_repo.pull_with_options(
-                remote_name, opts, progress, None)
+            result = self.ostree_repo.pull_with_options(remote_name, opts, progress, None)
 
             progress.finish()
             if not result:

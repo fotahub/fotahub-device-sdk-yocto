@@ -18,7 +18,9 @@ class AppUpdater(object):
 
         repo = self.__open_ostree_repo(ostree_repo_path)
         self.ostree_repo = OSTreeRepo(repo)
-        self.ostree_repo.add_ostree_remote(constants.FOTAHUB_OSTREE_REMOTE_NAME, constants.FOTAHUB_OSTREE_REMOTE_URL, ostree_gpg_verify)
+        
+        remote_name = self.ostree_repo.guess_remote_name(constants.FOTAHUB_OSTREE_REMOTE_NAME)
+        self.ostree_repo.add_ostree_remote(remote_name, constants.FOTAHUB_OSTREE_REMOTE_URL, ostree_gpg_verify)
 
     def __open_ostree_repo(self, repo_path):
         try:
