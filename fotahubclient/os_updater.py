@@ -70,10 +70,10 @@ class OSUpdater(object):
         
         self.ostree_repo.pull_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
 
-    def __stage_os_update(self, revision):
-        self.logger.info("Staging OS revision '{}'".format(revision))
+    def __deploy_os_update(self, revision):
+        self.logger.info("Deploying OS revision '{}'".format(revision))
         if self.has_pending_os_revision():
-            raise OSTreeError("Cannot stage any new OS update when some other OS update is still pending")
+            raise OSTreeError("Cannot deploy any new OS update when some other OS update is still pending")
 
         try:
             booted_deployment = self.sysroot.get_booted_deployment()
@@ -84,11 +84,14 @@ class OSUpdater(object):
             origin = booted_deployment.get_origin()
             checksum = self.ostree_repo.resolve_ostree_revision(None, revision)
 
-            [result, _] = self.sysroot.stage_tree(osname, checksum, origin, booted_deployment, None, None)
+            [result, new_deployment] = self.sysroot.deploy_tree(osname, checksum, origin, booted_deployment, None, None)
             if not result:
-                raise OSTreeError("Failed to stage OS revision '{}'".format(revision))
+                raise OSTreeError("Failed to check out deployment tree for OS revision '{}'".format(revision))
+
+            if not self.sysroot.simple_write_deployment(osname, new_deployment, booted_deployment, 0, None):
+                raise OSTreeError("Failed to prepend deployment tree for OS revision '{}' to list of deployments".format(revision))
         except GLib.Error as err:
-            raise OSTreeError("Failed to stage OS revision '{}'".format(revision)) from err
+            raise OSTreeError("Failed to deploy OS revision '{}'".format(revision)) from err
 
     def apply_os_update(self, revision, max_reboot_failures):
         self.logger.info("Applying OS update to revision '{}'".format(revision))
@@ -99,7 +102,7 @@ class OSUpdater(object):
         if revision == self.get_deployed_os_revision():
             raise OSTreeError("Cannot update OS towards the same revision that is already in use")
             
-        self.__stage_os_update(revision)
+        self.__deploy_os_update(revision)
 
         self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE, '1')
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT, str(max_reboot_failures))
