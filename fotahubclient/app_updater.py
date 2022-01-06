@@ -36,7 +36,8 @@ class AppUpdater(object):
             raise OSTreeError('Failed to open application OSTree repo') from err
 
     def list_app_names(self):
-        return [ref.split(':')[1] if ':' in ref else ref for ref in self.ostree_repo.list_ostree_refs()]
+        refs = self.ostree_repo.list_ostree_refs()
+        return [ref.split(':')[1] if ':' in ref else ref for ref in refs.keys()]
 
     def get_app_deploy_revision(self, name):
         return self.ostree_repo.resolve_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, name)

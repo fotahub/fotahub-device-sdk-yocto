@@ -17,7 +17,8 @@ class OSTreeRepo(object):
 
     def guess_remote_name(self, default_name):
         [_, refs] = self.ostree_repo.list_refs(None, None)
-        return refs[0].split(':')[0] if refs and ':' in refs[0] else default_name
+        remote_names = [ref.split(':')[0] for ref in refs.keys() if ':' in ref]
+        return remote_names[0] if remote_names else default_name
 
     def has_ostree_remote(self, name):
         return name in self.ostree_repo.remote_list()
