@@ -7,22 +7,22 @@ create_yocto_project_layout()
     export YOCTO_PROJECT_ROOT=$PWD/yocto
   fi
   if [ ! -d "$YOCTO_PROJECT_ROOT" ]; then
-    mkdir -p "$YOCTO_PROJECT_ROOT"
+    mkdir -p $YOCTO_PROJECT_ROOT
   fi
 
   # Locate Yocto layers area
   if [ -z "$YOCTO_LAYERS_DIR" ]; then
-    export YOCTO_LAYERS_DIR="$YOCTO_PROJECT_ROOT/layers"
+    export YOCTO_LAYERS_DIR=$YOCTO_PROJECT_ROOT/layers
   fi
 
   # Locate Yocto project cockpit area
   if [ -z "$YOCTO_COCKPIT_DIR" ]; then
-    export YOCTO_COCKPIT_DIR="$YOCTO_PROJECT_ROOT/cockpit"
+    export YOCTO_COCKPIT_DIR=$YOCTO_PROJECT_ROOT/cockpit
   fi
 
   # Locate Yocto layer git-repo manifest
   if [ -z "$YOCTO_LAYER_MANIFEST" ]; then
-    YOCTO_LAYER_MANIFEST="$YOCTO_COCKPIT_DIR/manifest.xml"
+    YOCTO_LAYER_MANIFEST=$YOCTO_COCKPIT_DIR/manifest.xml
   fi
   if [ ! -f "$YOCTO_LAYER_MANIFEST" ] || [ ! -s "$YOCTO_LAYER_MANIFEST" ]; then
     echo "ERROR: The Yocto layer git-repo manifest '$YOCTO_LAYER_MANIFEST' does not exist."
@@ -31,7 +31,7 @@ create_yocto_project_layout()
 
   # Locate Yocto build area
   if [ -z "$YOCTO_BUILD_DIR" ]; then
-    export YOCTO_BUILD_DIR="$YOCTO_PROJECT_ROOT/build"
+    export YOCTO_BUILD_DIR=$YOCTO_PROJECT_ROOT/build
   fi
 
   return 0
@@ -41,27 +41,27 @@ sync_yocto_layers()
 {
   local MANIFEST_FILE=$1
   local SOURCES_DIR=$2
-  local MANIFEST_REPO_DIR="$SOURCES_DIR/manifest"
-  local CURRENT_DIR="$PWD"
+  local MANIFEST_REPO_DIR=$SOURCES_DIR/manifest
+  local CURRENT_DIR=$PWD
 
-  mkdir -p "$MANIFEST_REPO_DIR"
-  cd "$MANIFEST_REPO_DIR"
-  cp "$MANIFEST_FILE" .
+  mkdir -p $MANIFEST_REPO_DIR
+  cd $MANIFEST_REPO_DIR
+  cp $MANIFEST_FILE .
   if [ ! -d .git ]; then
     git init
     git config --local user.name $(whoami)
     git config --local user.email $(whoami)@localhost
   fi
   if [ -n "$(git status --porcelain)" ]; then
-    git add $(basename "$MANIFEST_FILE")
+    git add $(basename $MANIFEST_FILE)
     git commit --allow-empty-message -m ''
   fi
 
-  cd "$SOURCES_DIR"
-  echo "N" | repo init -u "file://$MANIFEST_REPO_DIR" -b master -m $(basename "$MANIFEST_FILE")
+  cd $SOURCES_DIR
+  echo "N" | repo init -u "file://$MANIFEST_REPO_DIR" -b master -m $(basename $MANIFEST_FILE)
   repo sync --force-sync
   
-  cd "$CURRENT_DIR"
+  cd $CURRENT_DIR
 }
 
 detect_machine()
@@ -73,14 +73,14 @@ locate_build_results()
 {
   local MACHINE=$1
 
-  OS_IMAGE_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE"
-  APPS_IMAGE_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE"
+  OS_IMAGE_DIR=$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE
+  OS_OSTREE_REPO_DIR=$OS_IMAGE_DIR/ostree_repo
 
-  OS_OSTREE_REPO_DIR="$OS_IMAGE_DIR/ostree_repo"
-  APPS_OSTREE_REPO_DIR="$APPS_IMAGE_DIR/ostree_repo"
+  APPS_IMAGE_DIR=$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE
+  APPS_IMAGE_FILE=$APPS_IMAGE_DIR/fotahub-apps-package-$MACHINE.ext4
+  APPS_OSTREE_REPO_DIR=$APPS_IMAGE_DIR/ostree_repo
 
-  APPS_IMAGE_FILE="$APPS_IMAGE_DIR/fotahub-apps-package-$MACHINE.ext4"
-  WIC_IMAGE_FILE="$OS_IMAGE_DIR/fotahub-os-package-$MACHINE.wic"
+  WIC_IMAGE_FILE=$OS_IMAGE_DIR/fotahub-os-package-$MACHINE.wic
 }
 
 detect_apps()
@@ -90,7 +90,7 @@ detect_apps()
   locate_build_results $MACHINE
 
   if [ -d "$APPS_OSTREE_REPO_DIR" ]; then
-    ostree --repo="$APPS_OSTREE_REPO_DIR" refs
+    ostree --repo=$APPS_OSTREE_REPO_DIR refs
   else
     echo ""
   fi
@@ -112,8 +112,8 @@ yield_latest_wic_image()
   locate_build_results $MACHINE
 
   if [ -f "$WIC_IMAGE_FILE" ]; then
-    mkdir -p "$YOCTO_COCKPIT_DIR/build/images"
-    cp "$WIC_IMAGE_FILE" "$YOCTO_COCKPIT_DIR/build/images"
+    mkdir -p $YOCTO_COCKPIT_DIR/build/images
+    cp $WIC_IMAGE_FILE $YOCTO_COCKPIT_DIR/build/images
   fi
 }
 
@@ -124,7 +124,7 @@ show_latest_os_revision()
   locate_build_results $MACHINE
 
   if [ -d "$OS_OSTREE_REPO_DIR" ]; then
-    echo "Latest OS revision: $(ostree --repo="$OS_OSTREE_REPO_DIR" rev-parse fotahub-os-$MACHINE)"
+    echo "Latest OS revision: $(ostree --repo=$OS_OSTREE_REPO_DIR rev-parse fotahub-os-$MACHINE)"
   fi
 }
 
@@ -136,7 +136,7 @@ show_latest_app_revision()
   locate_build_results $MACHINE
 
   if [ -d "$APPS_OSTREE_REPO_DIR" ]; then
-    echo "Latest '$APP' revision: $(ostree --repo="$APPS_OSTREE_REPO_DIR" rev-parse $APP)"
+    echo "Latest '$APP' revision: $(ostree --repo=$APPS_OSTREE_REPO_DIR rev-parse $APP)"
   fi
 }
 
@@ -195,8 +195,8 @@ main()
     show_usage
     exit 1
   fi
-  local COMMAND="$1"
-  shift; set -- "$@"
+  local COMMAND=$1
+  shift; set -- $@
 
   if ! create_yocto_project_layout; then
     exit 1
@@ -207,17 +207,17 @@ main()
     exit 1
   fi
 
-  cd "$YOCTO_PROJECT_ROOT"
+  cd $YOCTO_PROJECT_ROOT
 
-  case "$COMMAND" in
+  case $COMMAND in
     sync)
       if [ $# -ne 1 ]; then
-        echo "ERROR: The "$COMMAND" command requires exactly 1 argument. Use the 'help' command to get more details."
+        echo "ERROR: The '$COMMAND' command requires exactly 1 argument. Use the 'help' command to get more details."
         exit 1
       fi
       local MACHINE=$1
 
-      if ! sync_yocto_layers "$YOCTO_LAYER_MANIFEST" "$YOCTO_LAYERS_DIR"; then
+      if ! sync_yocto_layers $YOCTO_LAYER_MANIFEST $YOCTO_LAYERS_DIR; then
         exit 1
       fi
 
@@ -233,9 +233,9 @@ main()
       DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
       DISTRO=fotahub-os bitbake fotahub-os-package -k $@
 
-      yield_latest_wic_image "$MACHINE"
-      show_latest_os_revision "$MACHINE"
-      show_latest_app_revisions "$MACHINE"
+      yield_latest_wic_image $MACHINE
+      show_latest_os_revision $MACHINE
+      show_latest_app_revisions $MACHINE
       ;;
 
     os)
@@ -245,12 +245,12 @@ main()
       # Conceptionally it would not be necessary to build the apps image along with the OS image right here. But technically,
       # there are no means to prevent the do_image_wic task from running when only the OS image is meant to be built, 
       # and that task would cause the build to fail if the apps image does not exist
-      if ! exists_apps_image "$MACHINE"; then
+      if ! exists_apps_image $MACHINE; then
         DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
       fi
       DISTRO=fotahub-os bitbake fotahub-os-package -k $@
 
-      show_latest_os_revision "$MACHINE"
+      show_latest_os_revision $MACHINE
       ;;
 
     apps)
@@ -259,16 +259,16 @@ main()
 
       DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
 
-      show_latest_app_revisions "$MACHINE"
+      show_latest_app_revisions $MACHINE
       ;;
 
     app)
       if [ $# -lt 1 ]; then
-        echo "ERROR: The "$COMMAND" command requires at least 1 argument. Use the 'help' command to get more details."
+        echo "ERROR: The '$COMMAND' command requires at least 1 argument. Use the 'help' command to get more details."
         exit 1
       fi
       local APP=$1
-      shift; set -- "$@"
+      shift; set -- $@
 
       source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
@@ -276,7 +276,7 @@ main()
       DISTRO=fotahub-apps bitbake $APP -c cleanall
       DISTRO=fotahub-apps bitbake $APP -k $@
       
-      show_latest_app_revision "$MACHINE" "$APP"
+      show_latest_app_revision $MACHINE $APP
       ;;
 
     clean)
@@ -293,8 +293,8 @@ main()
     show-revisions)
       local MACHINE=$(detect_machine)
 
-      show_latest_os_revision "$MACHINE"
-      show_latest_app_revisions "$MACHINE"
+      show_latest_os_revision $MACHINE
+      show_latest_app_revisions $MACHINE
       ;;
   
     bash)
