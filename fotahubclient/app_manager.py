@@ -12,6 +12,9 @@ import fotahubclient.common_constants as constants
 from fotahubclient.system_helper import touch
 from fotahubclient.runc_operator import RunCOperator, ContainerState
 
+class AppUpdateError(Exception):
+    pass
+
 def container_state_to_lifecycle_state(container_state, none_equivalent):
     if container_state is ContainerState.created:
         return LifecycleState.ready
@@ -122,7 +125,7 @@ class AppManager(object):
                     deploy_err = True
         
         if deploy_err:
-            raise RuntimeError("Failed to deploy or run one or several applications (run 'fotahub describe-deployed-artifacts' to get more details)") 
+            raise AppUpdateError("Failed to deploy or run one or several applications (run 'fotahub describe-deployed-artifacts' to get more details)") 
 
     def configure_app(self, name, run_mode=AppRunMode.automatic):
         self.__set_run_app_automatically(name, run_mode == AppRunMode.automatic)
@@ -135,7 +138,7 @@ class AppManager(object):
                 return message
             except Exception as err:
                 deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
-                raise RuntimeError("Failed to run '{}' application".format(name)) from err
+                raise AppUpdateError("Failed to run '{}' application".format(name)) from err
 
     def get_app_lifecycle_state(self, name):
         return self.__get_app_lifecycle_state(name)
@@ -150,7 +153,7 @@ class AppManager(object):
                 deploy_tracker.record_app_lifecycle_status_change(name, lifecycle_state=LifecycleState.ready)
             except Exception as err:
                 deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
-                raise RuntimeError("Failed to halt '{}' application".format(name)) from err
+                raise AppUpdateError("Failed to halt '{}' application".format(name)) from err
 
     def update_app(self, name, revision):
         with DeployedArtifactsTracker(self.config) as deploy_tracker:
@@ -181,12 +184,12 @@ class AppManager(object):
                 except Exception as err:
                     deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     update_tracker.record_app_update_status(name, status=False, message=str(err))
-                    raise RuntimeError("Failed to update '{}' application".format(name)) from err
+                    raise AppUpdateError("Failed to update '{}' application".format(name)) from err
 
     def roll_back_app(self, name):
         revision = self.updater.get_app_rollback_revision(name, self.config.deployed_artifacts_path)
         if not revision:
-             raise RuntimeError("Cannot roll back update for '{}' application before any such has been deployed".format(name))
+             raise AppUpdateError("Cannot roll back update for '{}' application before any such has been deployed".format(name))
         
         with DeployedArtifactsTracker(self.config) as deploy_tracker:
             with UpdateStatusTracker(self.config) as update_tracker:
@@ -206,7 +209,7 @@ class AppManager(object):
                 except Exception as err:
                     deploy_tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
                     update_tracker.record_app_update_status(name, status=False, message=str(err))
-                    raise RuntimeError("Failed to roll back '{}' application".format(name)) from err
+                    raise AppUpdateError("Failed to roll back '{}' application".format(name)) from err
 
     def delete_app(self, name):
         with DeployedArtifactsTracker(self.config) as tracker:
@@ -215,4 +218,4 @@ class AppManager(object):
                 tracker.erase_app(name)
             except Exception as err:
                 tracker.record_app_lifecycle_status_change(name, status=False, message=str(err))
-                raise RuntimeError("Failed to delete '{}' application") from err
+                raise AppUpdateError("Failed to delete '{}' application") from err

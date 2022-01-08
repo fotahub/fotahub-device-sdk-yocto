@@ -21,6 +21,10 @@ Stacktrace = false
 # Name of operating system distribution used on this device
 OSDistroName = fotahub-os-raspberrypi3
 
+# Options to use when rebooting the system after an operating system update
+# (see https://www.geeksforgeeks.org/reboot-command-in-linux-with-examples for details)
+OSRebootOptions = --force
+
 # Optional hook command used to verify whether operating system update is consistent;
 # executed after download of operating system update but before applying it and rebooting the system;
 # gets the revision of the downloaded operation system update passed in as first and only argument

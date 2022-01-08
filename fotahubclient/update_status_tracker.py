@@ -51,6 +51,10 @@ class UpdateStatusTracker(object):
                     message
                 )
             )
+
+    def get_os_update_revision(self):
+        update_status = self.__lookup_update_status(self.config.os_distro_name, ArtifactKind.operating_system)
+        return update_status.revision if update_status is not None else None
     
     def __lookup_update_status(self, artifact_name, artifact_kind):
         for update_status in self.update_statuses.update_statuses:

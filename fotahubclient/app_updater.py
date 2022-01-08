@@ -19,8 +19,8 @@ class AppUpdater(object):
         repo = self.__open_ostree_repo(ostree_repo_path)
         self.ostree_repo = OSTreeRepo(repo)
         
-        remote_name = self.ostree_repo.guess_remote_name(constants.FOTAHUB_OSTREE_REMOTE_NAME)
-        self.ostree_repo.add_ostree_remote(remote_name, constants.FOTAHUB_OSTREE_REMOTE_URL, ostree_gpg_verify)
+        self.remote_name = self.ostree_repo.guess_remote_name(constants.FOTAHUB_OSTREE_REMOTE_NAME_DEFAULT)
+        self.ostree_repo.add_ostree_remote(self.remote_name, constants.FOTAHUB_OSTREE_REMOTE_URL, ostree_gpg_verify)
 
     def __open_ostree_repo(self, repo_path):
         try:
@@ -40,7 +40,7 @@ class AppUpdater(object):
         return [ref.split(':')[1] if ':' in ref else ref for ref in refs.keys()]
 
     def get_app_deploy_revision(self, name):
-        return self.ostree_repo.resolve_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, name)
+        return self.ostree_repo.resolve_ostree_revision(self.remote_name, name)
 
     def get_app_rollback_revision(self, name, deployed_artifacts_path):
         if os.path.isfile(deployed_artifacts_path) and os.path.getsize(deployed_artifacts_path) > 0:
@@ -54,7 +54,7 @@ class AppUpdater(object):
     def pull_app_update(self, name, revision):
         self.logger.info("Pulling '{}' application revision '{}'".format(name, revision))
 
-        self.ostree_repo.pull_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, name, revision, constants.OSTREE_PULL_DEPTH)
+        self.ostree_repo.pull_ostree_revision(self.remote_name, name, revision, constants.OSTREE_PULL_DEPTH)
 
     def checkout_app_revision(self, name, revision, checkout_path):
         self.logger.info("Checking out '{}' application revision '{}'".format(name, revision))

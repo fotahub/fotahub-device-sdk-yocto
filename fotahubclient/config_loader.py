@@ -3,10 +3,12 @@ import logging
 import configparser
 from configparser import ConfigParser
 
+DISTRO_NAME_DEFAULT = 'os'
+REBOOT_OPTIONS_DEFAULT = '--force'
 DEPLOYED_ARTIFACTS_PATH_DEFAULT = '/var/log/fotahub/deployed-artifacts.json'
 UPDATE_STATUS_PATH_DEFAULT = '/var/log/fotahub/update-status.json'
 
-SYSTEM_CONFIG_PATH = '/etc/fotahub/fotahub.config'
+SYSTEM_CONFIG_PATH = '/etc/fotahub.conf'
 USER_CONFIG_FILE_NAME = '.fotahub'
 
 class ConfigLoader(object):
@@ -27,6 +29,7 @@ class ConfigLoader(object):
         self.stacktrace = stacktrace
 
         self.os_distro_name = None
+        self.os_reboot_options = None
         self.os_update_verification_command = None
         self.os_update_self_test_command = None
 
@@ -56,7 +59,8 @@ class ConfigLoader(object):
             if config.getboolean('General', 'Stacktrace', fallback=False):
                 self.stacktrace = True
 
-            self.os_distro_name = config.get('OS', 'OSDistroName', fallback='os')
+            self.os_distro_name = config.get('OS', 'OSDistroName', fallback=DISTRO_NAME_DEFAULT)
+            self.os_reboot_options = config.get('OS', 'OSRebootOptions', fallback=REBOOT_OPTIONS_DEFAULT).split()
             self.os_update_verification_command = config.get('OS', 'OSUpdateVerificationCommand', fallback=None)
             self.os_update_self_test_command = config.get('OS', 'OSUpdateSelfTestCommand', fallback=None)
 

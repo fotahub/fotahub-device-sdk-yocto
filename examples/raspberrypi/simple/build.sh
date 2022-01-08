@@ -6,14 +6,19 @@ create_yocto_project_layout()
   if [ -z "$YOCTO_PROJECT_ROOT" ]; then
     export YOCTO_PROJECT_ROOT=$PWD/yocto
   fi
-  if [ ! -d "$YOCTO_PROJECT_ROOT" ]; then
-    mkdir -p $YOCTO_PROJECT_ROOT
-  fi
+  mkdir -p $YOCTO_PROJECT_ROOT
 
   # Locate Yocto layers area
   if [ -z "$YOCTO_LAYERS_DIR" ]; then
     export YOCTO_LAYERS_DIR=$YOCTO_PROJECT_ROOT/layers
   fi
+  mkdir -p $YOCTO_LAYERS_DIR
+
+  # Locate Yocto downloads area
+  if [ -z "$YOCTO_DOWNLOADS_DIR" ]; then
+    export YOCTO_DOWNLOADS_DIR=$YOCTO_PROJECT_ROOT/downloads
+  fi
+  mkdir -p $YOCTO_LAYERS_DIR
 
   # Locate Yocto project cockpit area
   if [ -z "$YOCTO_COCKPIT_DIR" ]; then

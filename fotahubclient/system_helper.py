@@ -76,11 +76,11 @@ def read_last_lines(path, max_lines):
         # Read file content from current position on and convert result into text
         return file.read().decode().strip()
 
-def reboot_system():
-    logging.getLogger().info("Rebooting system")
+def reboot_system(args=[]):
+    logging.getLogger().info("Rebooting system {}".format('(using ' + ' '.join(args) + ')' if args else ''))
     
     try:
-        subprocess.run(["reboot", "--force"], check=True)
+        subprocess.run(["reboot"] + args, check=True)
     except subprocess.CalledProcessError as err:
         raise OSError("Failed to reboot system") from err
 

@@ -29,8 +29,8 @@ class OSUpdater(object):
         self.sysroot = sysroot
         self.ostree_repo = OSTreeRepo(repo)
 
-        remote_name = self.ostree_repo.guess_remote_name(constants.FOTAHUB_OSTREE_REMOTE_NAME)
-        self.ostree_repo.add_ostree_remote(remote_name, constants.FOTAHUB_OSTREE_REMOTE_URL, self.ostree_gpg_verify)
+        self.remote_name = self.ostree_repo.guess_remote_name(constants.FOTAHUB_OSTREE_REMOTE_NAME_DEFAULT)
+        self.ostree_repo.add_ostree_remote(self.remote_name, constants.FOTAHUB_OSTREE_REMOTE_URL, self.ostree_gpg_verify)
 
         self.uboot = UBootOperator()
     
@@ -68,7 +68,7 @@ class OSUpdater(object):
     def pull_os_update(self, revision):
         self.logger.info("Pulling OS revision '{}'".format(revision))
         
-        self.ostree_repo.pull_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
+        self.ostree_repo.pull_ostree_revision(self.remote_name, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
 
     def __deploy_os_update(self, revision):
         self.logger.info("Deploying OS revision '{}'".format(revision))
@@ -131,16 +131,16 @@ class OSUpdater(object):
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE)
 
     def discard_os_update(self):
-        self.logger.info("Discarding rolled back OS update")
-        if not self.is_rolling_back_os_update():
-            raise OSTreeError("Cannot discard OS update before any such has been rolled back")
+        self.logger.info("Discarding OS update")
         
+        self.uboot.set_uboot_env_var(UBOOT_FLAG_APPLYING_OS_UPDATE)
+        self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
         self.uboot.set_uboot_env_var(UBOOT_FLAG_ROLLING_BACK_OS_UPDATE)
 
         try:
-            if self.has_pending_os_revision():                    
+            if self.has_pending_os_revision():
                 # 0 is the index of the pending deployment
                 # TODO Reimplement this behavior using OSTree API (see https://github.com/ostreedev/ostree/blob/8cb5d920c4b89d17c196f30f2c59fcbd4c762a17/src/ostree/ot-admin-builtin-undeploy.c#L59)
-                subprocess.run(["ostree", "admin", "undeploy", "0"], check=True)
+                subprocess.run(['ostree', 'admin', 'undeploy', '0'], check=True)
         except subprocess.CalledProcessError as err:
             raise OSTreeError("Failed to discard rolled back OS update") from err
