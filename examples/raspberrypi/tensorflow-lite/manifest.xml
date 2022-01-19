@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+
+  <default sync-j="4" revision="master"/>
+
+  <remote fetch="https://git.yoctoproject.org/git" name="yocto"/>
+  <remote fetch="https://github.com/openembedded" name="oe"/>
+  <remote fetch="https://github.com/advancedtelematic" name="advancedtelematic"/>
+  <remote fetch="https://github.com/fotahub" name="fotahub"/>
+  <remote fetch="https://github.com/NobuoTsukamoto" name="NobuoTsukamoto"/>
+
+  <project remote="yocto" revision="dunfell" name="poky" path="poky"/>
+  <project remote="oe" revision="dunfell" name="meta-openembedded" path="meta-openembedded"/>
+  
+  <project remote="yocto" revision="dunfell" name="meta-raspberrypi" path="meta-raspberrypi"/>
+  
+  <project remote="advancedtelematic" revision="dunfell" name="meta-updater" path="meta-updater"/>
+  <project remote="advancedtelematic" revision="dunfell" name="meta-updater-raspberrypi" path="meta-updater-raspberrypi"/>
+  <project remote="fotahub" revision="dunfell" name="meta-fotahub" path="meta-fotahub"/>
+
+  <project remote="NobuoTsukamoto" revision="master" name="meta-tensorflow-lite" path="meta-tensorflow-lite"/>
+
+</manifest>
