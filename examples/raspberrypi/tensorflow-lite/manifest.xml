@@ -18,6 +18,6 @@
   <project remote="advancedtelematic" revision="dunfell" name="meta-updater-raspberrypi" path="meta-updater-raspberrypi"/>
   <project remote="fotahub" revision="dunfell" name="meta-fotahub" path="meta-fotahub"/>
 
-  <project remote="NobuoTsukamoto" revision="master" name="meta-tensorflow-lite" path="meta-tensorflow-lite"/>
+  <project remote="NobuoTsukamoto" revision="dunfell" name="meta-tensorflow-lite" path="meta-tensorflow-lite"/>
 
 </manifest>

@@ -18,7 +18,7 @@ create_yocto_project_layout()
   if [ -z "$YOCTO_DOWNLOADS_DIR" ]; then
     export YOCTO_DOWNLOADS_DIR=$YOCTO_PROJECT_ROOT/downloads
   fi
-  mkdir -p $YOCTO_LAYERS_DIR
+  mkdir -p $YOCTO_DOWNLOADS_DIR
 
   # Locate Yocto project cockpit area
   if [ -z "$YOCTO_COCKPIT_DIR" ]; then
@@ -45,8 +45,8 @@ create_yocto_project_layout()
 sync_yocto_layers()
 {
   local MANIFEST_FILE=$1
-  local SOURCES_DIR=$2
-  local MANIFEST_REPO_DIR=$SOURCES_DIR/manifest
+  local LAYERS_DIR=$2
+  local MANIFEST_REPO_DIR=$LAYERS_DIR/manifest
   local CURRENT_DIR=$PWD
 
   mkdir -p $MANIFEST_REPO_DIR
@@ -62,7 +62,7 @@ sync_yocto_layers()
     git commit --allow-empty-message -m ''
   fi
 
-  cd $SOURCES_DIR
+  cd $LAYERS_DIR
   echo "N" | repo init -u "file://$MANIFEST_REPO_DIR" -b master -m $(basename $MANIFEST_FILE)
   repo sync --force-sync
   
