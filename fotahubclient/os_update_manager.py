@@ -40,6 +40,7 @@ class OSUpdateManager(object):
     def roll_back_os_update(self):
         with UpdateStatusTracker(self.config) as tracker:
             try:
+                tracker.record_os_update_status(completion_state=UpdateCompletionState.invalidated, save_instantly=True)
                 self.updater.roll_back_os_update()
                 reboot_system(self.config.os_reboot_options)
             except Exception as err:

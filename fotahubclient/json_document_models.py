@@ -32,6 +32,7 @@ class UpdateCompletionState(Enum):
     verified = 'Verified'
     applied = 'Applied'
     confirmed = 'Confirmed' 
+    invalidated = 'Invalidated'
     rolled_back = 'RolledBack'
 
     def __str__(self):
@@ -151,13 +152,13 @@ class UpdateStatus(object):
         return int(time.time())
 
     def initiates_rollback_cycle(self, next_state):
-        return self.completion_state == UpdateCompletionState.confirmed and next_state == UpdateCompletionState.rolled_back
+        return self.completion_state == UpdateCompletionState.confirmed and next_state == UpdateCompletionState.invalidated
 
     def initiates_new_update_cycle(self, next_state):
         if type(self.completion_state) is not UpdateCompletionState:
             return True
 
-        if self.completion_state == UpdateCompletionState.confirmed and next_state != UpdateCompletionState.rolled_back:
+        if self.completion_state == UpdateCompletionState.confirmed and next_state != UpdateCompletionState.invalidated:
             return True
         if self.completion_state == UpdateCompletionState.rolled_back:
             return True
