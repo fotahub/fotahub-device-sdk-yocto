@@ -87,11 +87,15 @@ class DeployedArtifacts(object):
 
     @staticmethod
     def load_deployed_artifacts(path):
+        logging.getLogger().debug("Loading persisted deployed artifact infos from '{}'".format(path))
+
         with open(path) as file:
             return json.load(file, cls=DeployedArtifactsJSONDecoder)
 
     @staticmethod
     def save_deployed_artifacts(deployed_artifacts, path):
+        logging.getLogger().debug("Saving in-memory deployed artifact infos to '{}'".format(path))
+
         parent = os.path.dirname(path)
         if not os.path.isdir(parent):
             os.makedirs(parent, exist_ok=True)
@@ -110,6 +114,7 @@ class UpdateStatus(object):
         self.artifact_kind = artifact_kind
         self.revision = revision
         self.timestamp = timestamp if timestamp is not None else self.__get_utc_timestamp()
+        logging.getLogger().debug("Initializing timestamp of update status for '{}': {}".format(self.artifact_name, self.timestamp))
         self.completion_state = completion_state
         self.status = status
         self.message = message
@@ -118,6 +123,7 @@ class UpdateStatus(object):
         logging.getLogger().debug("Reinitializing update status for '{}': revision={}, completion_state={}, status={}, message={}".format(self.artifact_name, revision, completion_state, status, message))
         self.revision = revision
         self.timestamp = self.__get_utc_timestamp()
+        logging.getLogger().debug("Reinitializing timestamp of update status for '{}': {}".format(self.artifact_name, self.timestamp))
         self.completion_state = completion_state
         self.status = status
         self.message = message
@@ -130,6 +136,7 @@ class UpdateStatus(object):
         # Renew timestamp when rollback starts, keep existing timestamp otherwise
         if self.initiates_rollback_cycle(completion_state):
             self.timestamp = self.__get_utc_timestamp()
+            logging.getLogger().debug("Updating timestamp of update status for '{}': {}".format(self.artifact_name, self.timestamp))
         # Keep first non-empty message reported during current update/rollback cycle, reinitialize/reassign it otherwise 
         # !! Important Note !! Evaluate current completion state *before* amending it
         if not self.message or self.initiates_rollback_cycle(completion_state):
@@ -167,11 +174,15 @@ class UpdateStatuses(object):
 
     @staticmethod
     def load_update_statuses(path):
+        logging.getLogger().debug("Loading persisted update statuses from '{}'".format(path))
+
         with open(path) as file:
             return json.load(file, cls=UpdateStatusesJSONDecoder)
 
     @staticmethod
     def save_update_statuses(update_statuses, path, flush_instantly=False):
+        logging.getLogger().debug("Saving in-memory update statuses to '{}'".format(path))
+
         parent = os.path.dirname(path)
         if not os.path.isdir(parent):
             os.makedirs(parent, exist_ok=True)
