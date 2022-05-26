@@ -1,7 +1,8 @@
 from setuptools import setup, find_packages
 
 # Prerequisites: 
-# sudo apt install gcc libgirepository1.0-dev libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0
+# sudo apt update && sudo apt install gcc libgirepository1.0-dev libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0
+# python -m pip install --upgrade pip wheel setuptools pytest
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()

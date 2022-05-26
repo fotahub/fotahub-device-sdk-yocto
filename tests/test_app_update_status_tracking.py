@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import tempfile
@@ -96,6 +95,7 @@ def test_app_update_status__update_rollback():
         # App rollback
 
         with UpdateStatusTracker(config) as tracker:
+            tracker.record_app_update_status(app_name, completion_state=UpdateCompletionState.invalidated)
             tracker.record_app_update_status(app_name, completion_state=UpdateCompletionState.rolled_back, message='Update rolled back due to application-level or external request')
 
         temp.seek(0)

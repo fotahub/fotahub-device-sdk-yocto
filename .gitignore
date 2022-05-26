@@ -1,3 +1,4 @@
+/build
 /examples/*/*/build
 /venv
 __pycache__
