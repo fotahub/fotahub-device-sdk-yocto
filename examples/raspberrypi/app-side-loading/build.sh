@@ -81,7 +81,33 @@ locate_build_results()
   OS_IMAGE_DIR=$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE
   OS_OSTREE_REPO_DIR=$OS_IMAGE_DIR/ostree_repo
 
+  APPS_IMAGE_DIR=$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE
+  APPS_IMAGE_FILE=$APPS_IMAGE_DIR/fotahub-apps-package-$MACHINE.ext4
+  APPS_OSTREE_REPO_DIR=$APPS_IMAGE_DIR/ostree_repo
+
   WIC_IMAGE_FILE=$OS_IMAGE_DIR/fotahub-os-package-$MACHINE.wic
+}
+
+detect_apps()
+{
+  local MACHINE=$1
+
+  locate_build_results $MACHINE
+
+  if [ -d "$APPS_OSTREE_REPO_DIR" ]; then
+    ostree --repo=$APPS_OSTREE_REPO_DIR refs
+  else
+    echo ""
+  fi
+}
+
+exists_apps_image()
+{
+  local MACHINE=$1
+
+  locate_build_results $MACHINE
+
+  [ -f "$APPS_IMAGE_FILE" ] && return 0 || return 1
 }
 
 yield_latest_wic_image()
@@ -107,6 +133,27 @@ show_latest_os_revision()
   fi
 }
 
+show_latest_app_revision()
+{
+  local MACHINE=$1
+  local APP=$2
+
+  locate_build_results $MACHINE
+
+  if [ -d "$APPS_OSTREE_REPO_DIR" ]; then
+    echo "Latest '$APP' revision: $(ostree --repo=$APPS_OSTREE_REPO_DIR rev-parse $APP)"
+  fi
+}
+
+show_latest_app_revisions()
+{
+  local MACHINE=$1
+
+  for APP in $(detect_apps $MACHINE); do 
+    show_latest_app_revision $MACHINE $APP
+  done
+}
+
 show_usage()
 {
   cat << EOF
@@ -119,14 +166,24 @@ Commands:
         (e.g. sync raspberrypi3)
 
     wic <bitbake args...>
-        Build and publish OS image, and create machine-dependent live disk image including it
+        Build and publish OS and application images,
+        and create machine-dependent live disk image including OS and applications
         (e.g. '.wic' for Raspberry Pi)
 
-    clean
-        Clean build results
+    os <bitbake args...>
+        Build and publish OS image
 
-    show-revision
-        Show latest OS revision
+    apps <bitbake args...>
+        Build and publish all application images
+
+    app <app-name> <bitbake args...>
+        Build and publish image of given application
+
+    clean
+        Clean OS and application build results
+
+    show-revisions
+        Show latest OS and application revisions
 
     bash
         Start an interactive bash shell in the build container
@@ -178,23 +235,71 @@ main()
       source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
-      bitbake fotahub-os-package -k $@
+      DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
+      DISTRO=fotahub-os bitbake fotahub-os-package -k $@
 
       yield_latest_wic_image $MACHINE
       show_latest_os_revision $MACHINE
+      show_latest_app_revisions $MACHINE
+      ;;
+
+    os)
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      local MACHINE=$(detect_machine)
+
+      # Conceptionally it would not be necessary to build the apps image along with the OS image right here. But technically,
+      # there are no means to prevent the do_image_wic task from running when only the OS image is meant to be built, 
+      # and that task would cause the build to fail if the apps image does not exist
+      if ! exists_apps_image $MACHINE; then
+        DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
+      fi
+      DISTRO=fotahub-os bitbake fotahub-os-package -k $@
+
+      show_latest_os_revision $MACHINE
+      ;;
+
+    apps)
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      local MACHINE=$(detect_machine)
+
+      DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
+
+      show_latest_app_revisions $MACHINE
+      ;;
+
+    app)
+      if [ $# -lt 1 ]; then
+        echo "ERROR: The '$COMMAND' command requires at least 1 argument. Use the 'help' command to get more details."
+        exit 1
+      fi
+      local APP=$1
+      shift
+
+      source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      local MACHINE=$(detect_machine)
+
+      DISTRO=fotahub-apps bitbake $APP -c cleanall
+      DISTRO=fotahub-apps bitbake $APP -k $@
+      
+      show_latest_app_revision $MACHINE $APP
       ;;
 
     clean)
       source $YOCTO_LAYERS_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
-      bitbake fotahub-os-package -c cleanall
+      for APP in $(detect_apps $MACHINE); do
+        DISTRO=fotahub-apps bitbake $APP -c cleanall
+      done
+      DISTRO=fotahub-apps bitbake fotahub-apps-package -c cleanall
+      DISTRO=fotahub-os bitbake fotahub-os-package -c cleanall
       ;;
 
-    show-revision)
+    show-revisions)
       local MACHINE=$(detect_machine)
 
       show_latest_os_revision $MACHINE
+      show_latest_app_revisions $MACHINE
       ;;
   
     bash)
