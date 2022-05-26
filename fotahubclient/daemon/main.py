@@ -14,7 +14,7 @@ def run(config):
     manager = OSUpdateManager(config)
     manager.finalize_os_update()
 
-    logging.getLogger().debug('Deploying applications and running those configured to be run automatically')
+    logging.getLogger().debug('Deploying applications and launching those configured to be run automatically')
     manager = AppManager(config)
     manager.deploy_and_run_apps()
 

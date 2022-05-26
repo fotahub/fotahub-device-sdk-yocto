@@ -110,6 +110,8 @@ class AppManager(object):
             names = self.updater.list_app_names()
 
             deploy_err = False
+            if names:
+                self.logger.info("Deploying and launching applications")
             for name in names:
                 revision = self.updater.get_app_deploy_revision(name)
                 tracker.register_app(name, revision)

@@ -55,6 +55,7 @@ class OSUpdateManager(object):
                 self.logger.info("Booted OS revision: {}".format(deployed_revision))
                 
                 if self.updater.is_applying_os_update():
+                    self.logger.info("Finalizing OS update")
                     if deployed_revision == update_revision:
                         tracker.record_os_update_status(completion_state=UpdateCompletionState.applied)
                     else:
@@ -71,6 +72,7 @@ class OSUpdateManager(object):
                         reboot_system(self.config.os_reboot_options)
                 
                 elif self.updater.is_rolling_back_os_update():
+                    self.logger.info("Finalizing OS rollback")
                     if deployed_revision != update_revision:
                         self.updater.discard_os_update()
                         tracker.record_os_update_status(completion_state=UpdateCompletionState.rolled_back, message='Update rolled back due to application-level or external request')
