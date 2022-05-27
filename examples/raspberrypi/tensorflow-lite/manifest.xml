@@ -17,6 +17,7 @@
   <project remote="advancedtelematic" revision="dunfell" name="meta-updater" path="meta-updater"/>
   <project remote="advancedtelematic" revision="dunfell" name="meta-updater-raspberrypi" path="meta-updater-raspberrypi"/>
   <project remote="fotahub" revision="dunfell" name="meta-fotahub" path="meta-fotahub"/>
+  <project remote="fotahub" revision="dunfell" name="meta-fotahub-examples" path="meta-fotahub-examples"/>
 
   <project remote="NobuoTsukamoto" revision="dunfell" name="meta-tensorflow-lite" path="meta-tensorflow-lite"/>
 
